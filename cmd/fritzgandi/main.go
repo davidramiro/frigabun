@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
@@ -73,8 +74,15 @@ func initEcho() {
 		LogURI:    true,
 		LogStatus: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+
+			uri := v.URI
+			if configuration.Api.ApiKeyHidden {
+				re := regexp.MustCompile(`apikey=([^&]*)`)
+				uri = re.ReplaceAllString(v.URI, `apikey=**REDACTED**`)
+			}
+
 			logger.Info().
-				Str("URI", v.URI).
+				Str("URI", uri).
 				Int("status", v.Status).
 				Msg("request")
 
@@ -123,15 +131,13 @@ func handleUpdateRequest(c echo.Context) error {
 	}
 
 	logger.Info().Int("updates", successfulUpdates).Str("subdomains", request.Subdomains).Str("domain", request.Domain).Msg("successfully created")
+
 	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", successfulUpdates, request.Subdomains, request.Domain, request.IP))
 }
 
 func handleStatusCheck(c echo.Context) error {
-
 	statusResponse := &StatusResponse{ApiStatus: true}
-
 	return c.JSON(200, statusResponse)
-
 }
 
 func validateRequest(domain string, ip string) *HTTPError {

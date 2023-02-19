@@ -3,3 +3,4 @@ gandi:
   ttl: 300
 api:
   port: 9595
+  hideApiKeyInLogs: true
