@@ -30,6 +30,10 @@ type GandiRequest struct {
 	IPValues  []string `json:"rrset_values"`
 }
 
+type StatusResponse struct {
+	ApiStatus bool `json:"api_status"`
+}
+
 type HTTPError struct {
 	Code    int
 	Message string
@@ -80,6 +84,7 @@ func initEcho() {
 	e.Use(middleware.Recover())
 
 	e.GET("/api/update", handleUpdateRequest)
+	e.GET("/api/status", handleStatusCheck)
 
 	e.Logger.Fatal(e.Start(":" + configuration.Api.Port))
 }
@@ -119,6 +124,14 @@ func handleUpdateRequest(c echo.Context) error {
 
 	logger.Info().Int("updates", successfulUpdates).Str("subdomains", request.Subdomains).Str("domain", request.Domain).Msg("successfully created")
 	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", successfulUpdates, request.Subdomains, request.Domain, request.IP))
+}
+
+func handleStatusCheck(c echo.Context) error {
+
+	statusResponse := &StatusResponse{ApiStatus: true}
+
+	return c.JSON(200, statusResponse)
+
 }
 
 func validateRequest(domain string, ip string) *HTTPError {
