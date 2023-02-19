@@ -128,3 +128,18 @@ func TestUpdateEndpointWithInvalidMissingSubdomains(t *testing.T) {
 		assert.Contains(t, string(b), "missing subdomains parameter")
 	}
 }
+
+func TestStatusEndpoint(t *testing.T) {
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Assertions
+	if assert.NoError(t, handleStatusCheck(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		b, _ := io.ReadAll(rec.Body)
+		assert.Contains(t, string(b), "\"api_status\":true")
+	}
+}
