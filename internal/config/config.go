@@ -16,8 +16,9 @@ type Config struct {
 	} `yaml:"gandi"`
 
 	Api struct {
-		Port         string `yaml:"port"`
-		ApiKeyHidden bool   `yaml:"hideApiKeyInLogs"`
+		Port             string `yaml:"port"`
+		ApiKeyHidden     bool   `yaml:"hideApiKeyInLogs"`
+		StatusLogEnabled bool   `yaml:"enableStatusLog"`
 	} `yaml:"api"`
 }
 

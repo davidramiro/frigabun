@@ -81,10 +81,12 @@ func initEcho() {
 				uri = re.ReplaceAllString(v.URI, `apikey=**REDACTED**`)
 			}
 
-			logger.Info().
-				Str("URI", uri).
-				Int("status", v.Status).
-				Msg("request")
+			if configuration.Api.StatusLogEnabled || !strings.Contains(v.URI, "/status") {
+				logger.Info().
+					Str("URI", uri).
+					Int("status", v.Status).
+					Msg("request")
+			}
 
 			return nil
 		},

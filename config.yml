@@ -4,3 +4,4 @@ gandi:
 api:
   port: 9595
   hideApiKeyInLogs: true
+  enableStatusLog: false
