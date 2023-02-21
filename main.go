@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/davidramiro/fritzgandi/internal/api"
-	"github.com/davidramiro/fritzgandi/internal/config"
-	"github.com/davidramiro/fritzgandi/internal/logger"
+	"github.com/davidramiro/frigabun/internal/api"
+	"github.com/davidramiro/frigabun/internal/config"
+	"github.com/davidramiro/frigabun/internal/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

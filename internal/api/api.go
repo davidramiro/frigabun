@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/davidramiro/fritzgandi/internal/logger"
-	"github.com/davidramiro/fritzgandi/pkg/gandi"
+	"github.com/davidramiro/frigabun/internal/logger"
+	"github.com/davidramiro/frigabun/pkg/gandi"
+	"github.com/davidramiro/frigabun/pkg/porkbun"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,8 +21,17 @@ type ApiError struct {
 	Message string
 }
 
+type UpdateRequest struct {
+	Domain       string `query:"domain"`
+	Subdomains   string `query:"subdomain"`
+	IP           string `query:"ip"`
+	ApiKey       string `query:"apikey"`
+	ApiSecretKey string `query:"apisecretkey"`
+	Registrar    string `query:"registrar"`
+}
+
 func HandleUpdateRequest(c echo.Context) error {
-	var request gandi.UpdateRequest
+	var request UpdateRequest
 
 	err := c.Bind(&request)
 	if err != nil {
@@ -45,15 +55,29 @@ func HandleUpdateRequest(c echo.Context) error {
 	}
 
 	for i := range subdomains {
-		dnsInfo := &gandi.GandiDnsInfo{
-			IP:        request.IP,
-			Domain:    request.Domain,
-			Subdomain: subdomains[i],
-			ApiKey:    request.ApiKey,
-		}
-		err := gandi.AddRecord(dnsInfo)
-		if err != nil {
-			return c.String(err.Code, err.Message)
+		if request.Registrar == "gandi" {
+			dnsInfo := &gandi.GandiDnsInfo{
+				IP:        request.IP,
+				Domain:    request.Domain,
+				Subdomain: subdomains[i],
+				ApiKey:    request.ApiKey,
+			}
+			err := gandi.AddRecord(dnsInfo)
+			if err != nil {
+				return c.String(err.Code, err.Message)
+			}
+		} else if request.Registrar == "porkbun" {
+			dnsInfo := &porkbun.PorkbunDnsInfo{
+				IP:           request.IP,
+				Domain:       request.Domain,
+				Subdomain:    subdomains[i],
+				ApiKey:       request.ApiKey,
+				SecretApiKey: request.ApiSecretKey,
+			}
+			err := porkbun.AddRecord(dnsInfo)
+			if err != nil {
+				return c.String(err.Code, err.Message)
+			}
 		}
 
 		successfulUpdates++

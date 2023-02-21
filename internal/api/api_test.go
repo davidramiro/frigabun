@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/davidramiro/fritzgandi/internal/config"
+	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,7 +64,7 @@ func TestUpdateEndpointWithValidRequest(t *testing.T) {
 	q := make(url.Values)
 	q.Set("ip", config.AppConfig.Test.IP)
 	q.Set("domain", config.AppConfig.Test.Domain)
-	q.Set("subdomain", config.AppConfig.Test.Subdomain)
+	q.Set("subdomain", config.AppConfig.Test.Subdomain+"2")
 	q.Set("apiKey", config.AppConfig.Test.ApiKey)
 
 	e := echo.New()

@@ -1,6 +1,9 @@
 gandi:
   baseurl: https://dns.api.gandi.net/api/v5
   ttl: 300
+porkbun:
+  baseurl: https://porkbun.com/api/json/v3
+  ttl: 600
 api:
   port: 9595
   hideApiKeyInLogs: true

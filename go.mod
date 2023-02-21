@@ -1,4 +1,4 @@
-module github.com/davidramiro/fritzgandi
+module github.com/davidramiro/frigabun
 
 go 1.20
 

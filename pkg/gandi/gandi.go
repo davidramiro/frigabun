@@ -7,17 +7,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/davidramiro/fritzgandi/internal/config"
-	"github.com/davidramiro/fritzgandi/internal/logger"
-	"github.com/labstack/echo/v4"
+	"github.com/davidramiro/frigabun/internal/config"
+	"github.com/davidramiro/frigabun/internal/logger"
 )
-
-type UpdateRequest struct {
-	Domain     string `query:"domain"`
-	Subdomains string `query:"subdomain"`
-	IP         string `query:"ip"`
-	ApiKey     string `query:"apikey"`
-}
 
 type GandiDnsInfo struct {
 	IP        string
@@ -77,13 +69,9 @@ func AddRecord(updateRequest *GandiDnsInfo) *GandiUpdateError {
 
 	if resp.StatusCode != 201 {
 		b, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Err(err).Msg("gandi rejected request")
+		logger.Log.Error().Msg("gandi rejected request")
 		return &GandiUpdateError{Code: resp.StatusCode, Message: "gandi rejected request: " + string(b)}
 	}
 
 	return nil
-}
-
-func Hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
 }

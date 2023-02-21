@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/davidramiro/fritzgandi/internal/config"
+	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 

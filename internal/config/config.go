@@ -15,6 +15,11 @@ type Config struct {
 		TTL     int    `yaml:"ttl"`
 	} `yaml:"gandi"`
 
+	Porkbun struct {
+		BaseUrl string `yaml:"baseurl"`
+		TTL     int    `yaml:"ttl"`
+	} `yaml:"porkbun"`
+
 	Api struct {
 		Port             string `yaml:"port"`
 		ApiKeyHidden     bool   `yaml:"hideApiKeyInLogs"`

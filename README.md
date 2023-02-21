@@ -1,21 +1,27 @@
-# FritzGandi DynDNS Update
+# frigabun
 
-Web service to allow FritzBox routers to update Gandi DNS entries when obtaining a new IP address.
+Web service to allow FritzBox routers to update Gandi and Porkbun DNS entries when obtaining a new IP address.
 Uses the new LiveDNS API. Written in Go 1.20
 
 ## Requirements
-- A domain name on Gandi
-- Gandi API Key from [Account settings](https://account.gandi.net/) under Security
+- A domain name on Gandi or Porkbun
+- Gandi or Porkbun API credentials from [Account settings](https://account.gandi.net/) under Security
 - FritzBox router with up-to-date firmware
 - Optional: To build or run manually: Go 1.20
 
-## Usage
+## Set up service
 
-- Download the [latest](https://github.com/davidramiro/fritzgandi/releases/latest) release archive for your OS/arch
+- Download the [latest](https://github.com/davidramiro/frigabun/releases/latest) release archive for your OS/arch
 - Unzip, rename `config.sample.yml` to `config.yml` (config is fine as default, if you want to run tests, fill in your API info)
+
+## FritzBox settings
+
 - Log into your FritzBox
 - Navigate to `Internet` -> `Permit Access` -> `DynDNS`
 - Enable DynDNS and use `User-defined` as Provider
+
+### Gandi
+
 - Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
@@ -28,6 +34,21 @@ Uses the new LiveDNS API. Written in Go 1.20
 - Enter any value in the `Username` field
   - Unused, but required by the FritzBox interface
 - Enter your Gandi API-Key in the `Password` field
+
+### Porkbun
+
+- Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<username>&secretapikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=porkbun`
+  - Replace the `{HOST}` and `{PORT}` with your deployment of the application
+    - By default, the application uses port `9595`
+  - Replace `{DOMAIN}` with your base domain
+    - e.g. `yourdomain.com`
+  - Replace `{SUBDOMAIN}` with your subdomain or comma separated subdomains
+    - e.g. `subdomain` or `sudomain1,subdomain2`
+- Enter the full domain in the `Domain Name` field
+  - e.g. `subdomain.domain.com` (if you use multiple subdomains, just choose any of those)
+- Enter your Porkbun API key in the `Username` field
+- Enter your Porkbun API Secret Key in the `Password` field
+
 
 Your settings should look something like this:
 
@@ -47,7 +68,7 @@ Check below for an example on how to reverse proxy to this application with NGIN
 ## Linux systemd Service
 
 To create a systemd service and run the application on boot, create a service file, for example under
-`/etc/systemd/system/fritzgandi.service`.
+`/etc/systemd/system/frigabun.service`.
 
 Service file contents: 
 ```
@@ -55,8 +76,8 @@ Service file contents:
 Description=FritzGandi LiveDNS Microservice
 
 [Service]
-WorkingDirectory=/your/path
-ExecStart=/your/path/fritzgandi
+WorkingDirectory=/path/to/frigabun
+ExecStart=/path/to/frigabun/executable
 User=youruser
 Type=simple
 Restart=on-failure
@@ -72,13 +93,13 @@ Reload daemon, start the service, check its status:
 
 ```
 sudo systemctl daemon-reload
-sudo systemctl start fritzgandi.service
-sudo systemctl status fritzgandi
+sudo systemctl start frigabun.service
+sudo systemctl status frigabun
 ```
 
 If all is well, enable the service to be started on boot:
 
-`sudo systemctl enable fritzgandi`
+`sudo systemctl enable frigabun`
 
 ## NGINX Reverse Proxy
 
@@ -89,12 +110,12 @@ Shown below is an example of an NGINX + LetsEncrypt reverse proxy config for thi
 server {
     listen                  443 ssl http2;
     listen                  [::]:443 ssl http2;
-    server_name             fritzgandi.yourdomain.com;
+    server_name             frigabun.yourdomain.com;
 
     # SSL
-    ssl_certificate         /etc/letsencrypt/live/fritzgandi.yourdomain.com/fullchain.pem;
-    ssl_certificate_key     /etc/letsencrypt/live/fritzgandi.yourdomain.com/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/fritzgandi.yourdomain.com/chain.pem;
+    ssl_certificate         /etc/letsencrypt/live/frigabun.yourdomain.com/fullchain.pem;
+    ssl_certificate_key     /etc/letsencrypt/live/frigabun.yourdomain.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/frigabun.yourdomain.com/chain.pem;
 
     # security headers
     add_header X-Frame-Options           "DENY";
@@ -112,8 +133,8 @@ server {
     }
 
     # logging
-    access_log              /var/log/nginx/fritzgandi.yourdomain.com.access.log;
-    error_log               /var/log/nginx/fritzgandi.yourdomain.com.error.log warn;
+    access_log              /var/log/nginx/frigabun.yourdomain.com.access.log;
+    error_log               /var/log/nginx/frigabun.yourdomain.com.error.log warn;
 
     # reverse proxy
     location / {
@@ -142,7 +163,7 @@ server {
 server {
     listen      80;
     listen      [::]:80;
-    server_name fritzgandi.yourdomain.com;
+    server_name frigabun.yourdomain.com;
     
     # ACME-challenge
     location ^~ /.well-known/acme-challenge/ {
@@ -150,7 +171,7 @@ server {
     }
 
     location / {
-        return 301 https://fritzgandi.yourdomain.com$request_uri;
+        return 301 https://frigabun.yourdomain.com$request_uri;
     }
 }
 ```
