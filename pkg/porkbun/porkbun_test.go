@@ -6,6 +6,7 @@ import (
 	"path"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,8 @@ func TestUpdateEndpointWithValidRequest(t *testing.T) {
 
 	err := AddRecord(testDnsInfo)
 
+	time.Sleep(2 * time.Second)
+
 	assert.Nil(t, err)
 }
 
@@ -47,6 +50,8 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 	}
 
 	err := AddRecord(testDnsInfo)
+
+	time.Sleep(2 * time.Second)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -63,6 +68,8 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 
 	err := AddRecord(testDnsInfo)
 
+	time.Sleep(2 * time.Second)
+
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
 	assert.Contains(t, err.Message, "must have an answer")
@@ -77,6 +84,8 @@ func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 	}
 
 	err := AddRecord(testDnsInfo)
+
+	time.Sleep(2 * time.Second)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -94,6 +103,8 @@ func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
 	}
 
 	err := AddRecord(testDnsInfo)
+
+	time.Sleep(2 * time.Second)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
