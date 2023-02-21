@@ -31,8 +31,8 @@ func initEcho() {
 
 			uri := v.URI
 			if config.AppConfig.Api.ApiKeyHidden {
-				re := regexp.MustCompile(`apikey=([^&]*)`)
-				uri = re.ReplaceAllString(v.URI, `apikey=**REDACTED**`)
+				re := regexp.MustCompile(`key=([^&]*)`)
+				uri = re.ReplaceAllString(v.URI, `key=**REDACTED**`)
 			}
 
 			if config.AppConfig.Api.StatusLogEnabled || !strings.Contains(v.URI, "/status") {
