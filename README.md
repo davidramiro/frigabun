@@ -22,7 +22,7 @@ Uses the new LiveDNS API. Written in Go 1.20
 
 ### Gandi
 
-- Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>`
+- Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=gandi`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
   - Replace `{DOMAIN}` with your base domain
