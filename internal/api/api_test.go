@@ -60,12 +60,13 @@ func TestInvalidDomain(t *testing.T) {
 	assert.Equal(t, 400, err.Code, "invalid domain should return error")
 }
 
-func TestUpdateEndpointWithValidRequest(t *testing.T) {
+func TestGandiUpdateWithValidRequest(t *testing.T) {
 	q := make(url.Values)
-	q.Set("ip", config.AppConfig.Test.IP)
-	q.Set("domain", config.AppConfig.Test.Domain)
-	q.Set("subdomain", config.AppConfig.Test.Subdomain+"2")
-	q.Set("apiKey", config.AppConfig.Test.ApiKey)
+	q.Set("ip", config.AppConfig.Test.Gandi.IP)
+	q.Set("domain", config.AppConfig.Test.Gandi.Domain)
+	q.Set("subdomain", config.AppConfig.Test.Gandi.Subdomain+"2")
+	q.Set("apiKey", config.AppConfig.Test.Gandi.ApiKey)
+	q.Set("registrar", "gandi")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
@@ -80,12 +81,35 @@ func TestUpdateEndpointWithValidRequest(t *testing.T) {
 	}
 }
 
-func TestUpdateEndpointWithInvalidIp(t *testing.T) {
+func TestPorkbunUpdateWithValidRequest(t *testing.T) {
+	q := make(url.Values)
+	q.Set("ip", config.AppConfig.Test.Porkbun.IP)
+	q.Set("domain", config.AppConfig.Test.Porkbun.Domain)
+	q.Set("subdomain", config.AppConfig.Test.Porkbun.Subdomain+"2")
+	q.Set("apikey", config.AppConfig.Test.Porkbun.ApiKey)
+	q.Set("apisecretkey", config.AppConfig.Test.Porkbun.ApiSecretKey)
+	q.Set("registrar", "porkbun")
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Assertions
+	if assert.NoError(t, HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		b, _ := io.ReadAll(rec.Body)
+		assert.Contains(t, string(b), "created")
+	}
+}
+
+func TestGandiUpdateWithInvalidIp(t *testing.T) {
 	q := make(url.Values)
 	q.Set("ip", "::1")
 	q.Set("domain", "domain.com")
 	q.Set("subdomain", "test1,test2")
 	q.Set("apiKey", "foo")
+	q.Set("registrar", "gandi")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
@@ -100,11 +124,12 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 	}
 }
 
-func TestUpdateEndpointWithMissingParam(t *testing.T) {
+func TestGandiUpdateWithMissingParam(t *testing.T) {
 	q := make(url.Values)
 	q.Set("ip", "1.2.3.4")
 	q.Set("subdomain", "test1,test2")
 	q.Set("apiKey", "foo")
+	q.Set("registrar", "gandi")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
@@ -119,11 +144,12 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 	}
 }
 
-func TestUpdateEndpointWithInvalidMissingSubdomains(t *testing.T) {
+func TestGandiUpdateWithInvalidMissingSubdomains(t *testing.T) {
 	q := make(url.Values)
 	q.Set("ip", "1.2.3.4")
 	q.Set("domain", "domain.com")
 	q.Set("apiKey", "foo")
+	q.Set("registrar", "gandi")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
@@ -138,13 +164,14 @@ func TestUpdateEndpointWithInvalidMissingSubdomains(t *testing.T) {
 	}
 }
 
-func TestUpdateEndpointWithInvalidApiKey(t *testing.T) {
+func TestGandiUpdateWithInvalidApiKey(t *testing.T) {
 	// Setup
 	q := make(url.Values)
 	q.Set("ip", "1.2.3.4")
 	q.Set("domain", "domain.com")
 	q.Set("subdomain", "test1,test2")
 	q.Set("apiKey", "foo")
+	q.Set("registrar", "gandi")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)

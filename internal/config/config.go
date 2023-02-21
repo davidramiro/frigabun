@@ -27,11 +27,20 @@ type Config struct {
 	} `yaml:"api"`
 
 	Test struct {
-		ApiKey    string `yaml:"apiKey"`
-		Domain    string `yaml:"domain"`
-		Subdomain string `yaml:"subdomain"`
-		IP        string `yaml:"ip"`
-	}
+		Gandi struct {
+			ApiKey    string `yaml:"apiKey"`
+			Domain    string `yaml:"domain"`
+			Subdomain string `yaml:"subdomain"`
+			IP        string `yaml:"ip"`
+		} `yaml:"gandi"`
+		Porkbun struct {
+			ApiKey       string `yaml:"apiKey"`
+			ApiSecretKey string `yaml:"apiSecretKey"`
+			Domain       string `yaml:"domain"`
+			Subdomain    string `yaml:"subdomain"`
+			IP           string `yaml:"ip"`
+		} `yaml:"porkbun"`
+	} `yaml:"test"`
 }
 
 var AppConfig *Config

@@ -46,14 +46,13 @@ func AddRecord(dnsInfo *PorkbunDnsInfo) *PorkbunUpdateError {
 
 	deleteErr := deleteOldRecord(dnsInfo, porkbunRequest)
 	if deleteErr != nil {
-		logger.Log.Error().Msg("deleting old porkbun request failed")
-		return &PorkbunUpdateError{Code: 400, Message: "deleting old porkbun request failed"}
+		logger.Log.Warn().Msg("deleting old porkbun request failed")
 	}
 
 	postErr := postNewRecord(dnsInfo, porkbunRequest)
 	if postErr != nil {
-		logger.Log.Error().Str("err", postErr.Message).Msg("posting new porkbun record failed")
-		return &PorkbunUpdateError{Code: 400, Message: "posting new porkbun record failed"}
+		logger.Log.Error().Str("err", postErr.Message).Msg("porkbun rejected new record")
+		return &PorkbunUpdateError{Code: 400, Message: postErr.Message}
 	}
 
 	return nil

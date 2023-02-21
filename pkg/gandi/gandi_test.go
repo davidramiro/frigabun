@@ -23,12 +23,12 @@ func init() {
 	config.InitConfig()
 }
 
-func TestUpdateEndpointWithInvalidIp(t *testing.T) {
+func TestUpdateEndpointWithValidRequest(t *testing.T) {
 	testDnsInfo := &GandiDnsInfo{
-		IP:        config.AppConfig.Test.IP,
-		Domain:    config.AppConfig.Test.Domain,
-		Subdomain: config.AppConfig.Test.Subdomain,
-		ApiKey:    config.AppConfig.Test.ApiKey,
+		IP:        config.AppConfig.Test.Gandi.IP,
+		Domain:    config.AppConfig.Test.Gandi.Domain,
+		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
+		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
 	err := AddRecord(testDnsInfo)
@@ -36,11 +36,26 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestUpdateEndpointWithInvalidIp(t *testing.T) {
+	testDnsInfo := &GandiDnsInfo{
+		IP:        "::1",
+		Domain:    config.AppConfig.Test.Gandi.Domain,
+		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
+		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
+	}
+
+	err := AddRecord(testDnsInfo)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, http.StatusBadRequest, err.Code)
+	assert.Contains(t, err.Message, "IPv4")
+}
+
 func TestUpdateEndpointWithMissingParam(t *testing.T) {
 	testDnsInfo := &GandiDnsInfo{
-		Domain:    config.AppConfig.Test.Domain,
-		Subdomain: config.AppConfig.Test.Subdomain,
-		ApiKey:    config.AppConfig.Test.ApiKey,
+		Domain:    config.AppConfig.Test.Gandi.Domain,
+		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
+		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
 	err := AddRecord(testDnsInfo)
@@ -53,9 +68,9 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 
 func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 	testDnsInfo := &GandiDnsInfo{
-		IP:        config.AppConfig.Test.IP,
-		Domain:    config.AppConfig.Test.Domain,
-		Subdomain: config.AppConfig.Test.Subdomain,
+		IP:        config.AppConfig.Test.Gandi.IP,
+		Domain:    config.AppConfig.Test.Gandi.Domain,
+		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 	}
 
 	err := AddRecord(testDnsInfo)
@@ -69,9 +84,9 @@ func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
 	testDnsInfo := &GandiDnsInfo{
 		Domain:    "example.com",
-		IP:        config.AppConfig.Test.IP,
-		Subdomain: config.AppConfig.Test.Subdomain,
-		ApiKey:    config.AppConfig.Test.ApiKey,
+		IP:        config.AppConfig.Test.Gandi.IP,
+		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
+		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
 	err := AddRecord(testDnsInfo)

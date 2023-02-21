@@ -9,7 +9,14 @@ api:
   hideApiKeyInLogs: true
   enableStatusLog: false
 test:
-  apiKey: YOUR-API-KEY
-  domain: YOUR-DOMAIN
-  subdomain: RANDOM-SUBDOMAIN
-  ip: RANDOM-IP
+  gandi:
+    apiKey: YOUR-API-KEY
+    domain: YOUR-DOMAIN
+    subdomain: RANDOM-SUBDOMAIN
+    ip: RANDOM-IP
+  porkbun:
+    apiKey: YOUR-API-KEY
+    apiSecretKey: YOUR-SECRET-API-KEY
+    domain: YOUR-DOMAIN
+    subdomain: RANDOM-SUBDOMAIN
+    ip: RANDOM-IP
