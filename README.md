@@ -11,7 +11,8 @@ Uses the new LiveDNS API. Written in Go 1.20
 
 ## Usage
 
-- Download the [latest](https://github.com/davidramiro/fritzgandi/releases/latest) release archive for your OS/arch, unzip and run the executable **OR** clone the repo and run with `go run cmd/fritzgandi/main.go`
+- Download the [latest](https://github.com/davidramiro/fritzgandi/releases/latest) release archive for your OS/arch
+- Unzip, rename `config.sample.yml` to `config.yml` (config is fine as default, if you want to run tests, fill in your API info)
 - Log into your FritzBox
 - Navigate to `Internet` -> `Permit Access` -> `DynDNS`
 - Enable DynDNS and use `User-defined` as Provider

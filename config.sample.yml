@@ -1,0 +1,12 @@
+gandi:
+  baseurl: https://dns.api.gandi.net/api/v5
+  ttl: 300
+api:
+  port: 9595
+  hideApiKeyInLogs: true
+  enableStatusLog: false
+test:
+  apiKey: YOUR-API-KEY
+  domain: YOUR-DOMAIN
+  subdomain: RANDOM-SUBDOMAIN
+  ip: RANDOM-IP

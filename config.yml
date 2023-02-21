@@ -1,7 +1,0 @@
-gandi:
-  baseurl: "https://dns.api.gandi.net/api/v5"
-  ttl: 300
-api:
-  port: 9595
-  hideApiKeyInLogs: true
-  enableStatusLog: false

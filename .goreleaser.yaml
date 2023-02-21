@@ -3,7 +3,7 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - main: ./cmd/fritzgandi
+  - main: ./
     env:
       - CGO_ENABLED=0
     goos:
@@ -18,7 +18,7 @@ archives:
       386: i386
       amd64: x86_64
     files:
-    - config.yml
+    - config.sample.yml
     format_overrides:
       - goos: windows
         format: zip

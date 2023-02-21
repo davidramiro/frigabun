@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"io"
@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/davidramiro/fritzgandi/internal/config"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,11 +24,22 @@ func init() {
 		panic(err)
 	}
 
-	initConfig()
+	config.InitConfig()
 }
 
-func TestInitConfig(t *testing.T) {
-	assert.NotNil(t, configuration, "initConfig should fill config object")
+func TestStatusEndpoint(t *testing.T) {
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Assertions
+	if assert.NoError(t, HandleStatusCheck(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		b, _ := io.ReadAll(rec.Body)
+		assert.Contains(t, string(b), "\"api_status\":true")
+	}
 }
 
 func TestValidDomainAndIp(t *testing.T) {
@@ -48,15 +60,12 @@ func TestInvalidDomain(t *testing.T) {
 	assert.Equal(t, 400, err.Code, "invalid domain should return error")
 }
 
-func TestUpdateEndpointWithInvalidApiKey(t *testing.T) {
-	initConfig()
-
-	// Setup
+func TestUpdateEndpointWithValidRequest(t *testing.T) {
 	q := make(url.Values)
-	q.Set("ip", "1.2.3.4")
-	q.Set("domain", "domain.com")
-	q.Set("subdomain", "test1,test2")
-	q.Set("apiKey", "foo")
+	q.Set("ip", config.AppConfig.Test.IP)
+	q.Set("domain", config.AppConfig.Test.Domain)
+	q.Set("subdomain", config.AppConfig.Test.Subdomain)
+	q.Set("apiKey", config.AppConfig.Test.ApiKey)
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
@@ -64,10 +73,10 @@ func TestUpdateEndpointWithInvalidApiKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, handleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusForbidden, rec.Code)
+	if assert.NoError(t, HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
 		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "gandi rejected request")
+		assert.Contains(t, string(b), "created")
 	}
 }
 
@@ -84,7 +93,7 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, handleUpdateRequest(c)) {
+	if assert.NoError(t, HandleUpdateRequest(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		b, _ := io.ReadAll(rec.Body)
 		assert.Contains(t, string(b), "invalid IP address")
@@ -103,7 +112,7 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, handleUpdateRequest(c)) {
+	if assert.NoError(t, HandleUpdateRequest(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		b, _ := io.ReadAll(rec.Body)
 		assert.Contains(t, string(b), "missing or invalid domain name")
@@ -122,24 +131,30 @@ func TestUpdateEndpointWithInvalidMissingSubdomains(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, handleUpdateRequest(c)) {
+	if assert.NoError(t, HandleUpdateRequest(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		b, _ := io.ReadAll(rec.Body)
 		assert.Contains(t, string(b), "missing subdomains parameter")
 	}
 }
 
-func TestStatusEndpoint(t *testing.T) {
+func TestUpdateEndpointWithInvalidApiKey(t *testing.T) {
+	// Setup
+	q := make(url.Values)
+	q.Set("ip", "1.2.3.4")
+	q.Set("domain", "domain.com")
+	q.Set("subdomain", "test1,test2")
+	q.Set("apiKey", "foo")
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, handleStatusCheck(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
+	if assert.NoError(t, HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusForbidden, rec.Code)
 		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "\"api_status\":true")
+		assert.Contains(t, string(b), "gandi rejected request")
 	}
 }
