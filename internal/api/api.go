@@ -78,6 +78,8 @@ func HandleUpdateRequest(c echo.Context) error {
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}
+		} else {
+			return c.String(http.StatusBadRequest, "missing or invalid registrar")
 		}
 
 		successfulUpdates++
