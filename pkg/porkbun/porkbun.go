@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/davidramiro/frigabun/internal/logger"
@@ -49,11 +50,15 @@ func AddRecord(dnsInfo *PorkbunDnsInfo) *PorkbunUpdateError {
 		logger.Log.Warn().Msg("deleting old porkbun request failed")
 	}
 
+	time.Sleep(2 * time.Second)
+
 	postErr := postNewRecord(dnsInfo, porkbunRequest)
 	if postErr != nil {
 		logger.Log.Error().Str("err", postErr.Message).Msg("porkbun rejected new record")
 		return &PorkbunUpdateError{Code: 400, Message: postErr.Message}
 	}
+
+	time.Sleep(2 * time.Second)
 
 	return nil
 }
