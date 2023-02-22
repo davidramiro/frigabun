@@ -5,7 +5,7 @@ Uses the new LiveDNS API. Written in Go 1.20
 
 ## Requirements
 - A domain name on Gandi or Porkbun
-- Gandi or Porkbun API credentials from [Account settings](https://account.gandi.net/) under Security
+- Gandi or Porkbun API credentials
 - FritzBox router with up-to-date firmware
 - Optional: To build or run manually: Go 1.20
 
@@ -14,14 +14,15 @@ Uses the new LiveDNS API. Written in Go 1.20
 - Download the [latest](https://github.com/davidramiro/frigabun/releases/latest) release archive for your OS/arch
 - Unzip, rename `config.sample.yml` to `config.yml` (config is fine as default, if you want to run tests, fill in your API info)
 
-## FritzBox settings
+### Gandi
 
+- Obtain Gandi API credentials: 
+  - Go to [Account settings](https://account.gandi.net/en)
+  - Choose Authentication options 
+  - Generate an API key on the bottom of the page
 - Log into your FritzBox
 - Navigate to `Internet` -> `Permit Access` -> `DynDNS`
 - Enable DynDNS and use `User-defined` as Provider
-
-### Gandi
-
 - Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=gandi`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
@@ -37,6 +38,14 @@ Uses the new LiveDNS API. Written in Go 1.20
 
 ### Porkbun
 
+- Obtain Porkbun API credentials as per [this article](https://kb.porkbun.com/article/190-getting-started-with-the-porkbun-api):
+  - Go to your [account settings](https://porkbun.com/account/api)
+  - Create an API key, note down API key and API secret key
+  - Go to [domain management](https://porkbun.com/account/domains)
+  - Expand the details of your domain and enable the API access toggle on every domain you want to manage via frigabun
+- Log into your FritzBox
+- Navigate to `Internet` -> `Permit Access` -> `DynDNS`
+- Enable DynDNS and use `User-defined` as Provider
 - Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<username>&secretapikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=porkbun`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
@@ -57,7 +66,7 @@ Your settings should look something like this:
 Right after you save the settings, your FritzBox will make a request to the application. You should see the following
 success message in its log:
 
-![](https://kore.cc/fritzgandi/success.png "Success Message")
+![](https://kore.cc/fritzgandi/success-frigabun.png "Success Message")
 
 Your FritzBox will now automatically communicate new IPs to the application. 
 
