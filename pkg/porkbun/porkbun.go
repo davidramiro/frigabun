@@ -34,25 +34,25 @@ type PorkbunUpdateError struct {
 	Message string
 }
 
-func AddRecord(dnsInfo *PorkbunDnsInfo) *PorkbunUpdateError {
+func (p *PorkbunDnsInfo) AddRecord() *PorkbunUpdateError {
 
 	porkbunRequest := &PorkbunApiRequest{
-		Subdomain:    dnsInfo.Subdomain,
-		IP:           dnsInfo.IP,
+		Subdomain:    p.Subdomain,
+		IP:           p.IP,
 		TTL:          config.AppConfig.Porkbun.TTL,
 		Type:         "A",
-		ApiKey:       dnsInfo.ApiKey,
-		SecretApiKey: dnsInfo.SecretApiKey,
+		ApiKey:       p.ApiKey,
+		SecretApiKey: p.SecretApiKey,
 	}
 
-	deleteErr := deleteOldRecord(dnsInfo, porkbunRequest)
+	deleteErr := deleteOldRecord(p, porkbunRequest)
 	if deleteErr != nil {
 		logger.Log.Warn().Msg("deleting old porkbun request failed")
 	}
 
 	time.Sleep(2 * time.Second)
 
-	postErr := postNewRecord(dnsInfo, porkbunRequest)
+	postErr := porkbunRequest.postNewRecord(p)
 	if postErr != nil {
 		logger.Log.Error().Str("err", postErr.Message).Msg("porkbun rejected new record")
 		return &PorkbunUpdateError{Code: 400, Message: postErr.Message}
@@ -80,12 +80,12 @@ func deleteOldRecord(dnsInfo *PorkbunDnsInfo, porkbunRequest *PorkbunApiRequest)
 	return nil
 }
 
-func postNewRecord(dnsInfo *PorkbunDnsInfo, porkbunRequest *PorkbunApiRequest) *PorkbunUpdateError {
+func (p *PorkbunApiRequest) postNewRecord(dnsInfo *PorkbunDnsInfo) *PorkbunUpdateError {
 	endpoint := fmt.Sprintf("%s/dns/create/%s", config.AppConfig.Porkbun.BaseUrl, dnsInfo.Domain)
 
-	logger.Log.Info().Str("subdomain", porkbunRequest.Subdomain).Str("endpoint", endpoint).Str("IP", porkbunRequest.IP).Msg("creating new record")
+	logger.Log.Info().Str("subdomain", p.Subdomain).Str("endpoint", endpoint).Str("IP", p.IP).Msg("creating new record")
 
-	resp, err := executeRequest(endpoint, porkbunRequest)
+	resp, err := executeRequest(endpoint, p)
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,7 @@ func TestUpdateEndpointWithValidRequest(t *testing.T) {
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.Nil(t, err)
 }
@@ -46,7 +46,7 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -61,7 +61,7 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -76,7 +76,7 @@ func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 		Subdomain: config.AppConfig.Test.Porkbun.Subdomain,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -93,7 +93,7 @@ func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)

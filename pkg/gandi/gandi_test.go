@@ -31,7 +31,7 @@ func TestUpdateEndpointWithValidRequest(t *testing.T) {
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.Nil(t, err)
 }
@@ -44,7 +44,7 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -58,7 +58,7 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -73,7 +73,7 @@ func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusForbidden, err.Code)
@@ -89,7 +89,7 @@ func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := AddRecord(testDnsInfo)
+	err := testDnsInfo.AddRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusNotFound, err.Code)

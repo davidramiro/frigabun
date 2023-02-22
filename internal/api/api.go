@@ -62,7 +62,7 @@ func HandleUpdateRequest(c echo.Context) error {
 				Subdomain: subdomains[i],
 				ApiKey:    request.ApiKey,
 			}
-			err := gandi.AddRecord(dnsInfo)
+			err := dnsInfo.AddRecord()
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}
@@ -74,7 +74,7 @@ func HandleUpdateRequest(c echo.Context) error {
 				ApiKey:       request.ApiKey,
 				SecretApiKey: request.ApiSecretKey,
 			}
-			err := porkbun.AddRecord(dnsInfo)
+			err := dnsInfo.AddRecord()
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}

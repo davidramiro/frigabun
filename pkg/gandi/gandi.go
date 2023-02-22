@@ -30,17 +30,17 @@ type GandiUpdateError struct {
 	Message string
 }
 
-func AddRecord(updateRequest *GandiDnsInfo) *GandiUpdateError {
+func (g *GandiDnsInfo) AddRecord() *GandiUpdateError {
 
 	gandiRequest := &GandiApiRequest{
-		Subdomain: updateRequest.Subdomain,
-		IPValues:  []string{updateRequest.IP},
+		Subdomain: g.Subdomain,
+		IPValues:  []string{g.IP},
 		TTL:       config.AppConfig.Gandi.TTL,
 		Type:      "A",
 	}
 
 	endpoint := fmt.Sprintf("%s/domains/%s/records/%s/A", config.AppConfig.Gandi.BaseUrl,
-		updateRequest.Domain, gandiRequest.Subdomain)
+		g.Domain, gandiRequest.Subdomain)
 
 	logger.Log.Info().Str("subdomain", gandiRequest.Subdomain).Str("endpoint", endpoint).Str("IP", gandiRequest.IPValues[0]).Msg("building update request")
 
@@ -57,7 +57,7 @@ func AddRecord(updateRequest *GandiDnsInfo) *GandiUpdateError {
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.Header.Set("Authorization", "Apikey "+updateRequest.ApiKey)
+	req.Header.Set("Authorization", "Apikey "+g.ApiKey)
 
 	client := &http.Client{}
 
