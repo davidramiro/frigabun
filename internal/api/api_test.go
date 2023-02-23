@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/davidramiro/frigabun/internal/config"
+	"github.com/go-faker/faker/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,7 +63,7 @@ func TestInvalidDomain(t *testing.T) {
 
 func TestGandiUpdateWithValidRequest(t *testing.T) {
 	q := make(url.Values)
-	q.Set("ip", config.AppConfig.Test.Gandi.IP)
+	q.Set("ip", faker.IPv4())
 	q.Set("domain", config.AppConfig.Test.Gandi.Domain)
 	q.Set("subdomain", config.AppConfig.Test.Gandi.Subdomain+"2")
 	q.Set("apiKey", config.AppConfig.Test.Gandi.ApiKey)
@@ -83,7 +84,7 @@ func TestGandiUpdateWithValidRequest(t *testing.T) {
 
 func TestPorkbunUpdateWithValidRequest(t *testing.T) {
 	q := make(url.Values)
-	q.Set("ip", config.AppConfig.Test.Porkbun.IP)
+	q.Set("ip", faker.IPv4())
 	q.Set("domain", config.AppConfig.Test.Porkbun.Domain)
 	q.Set("subdomain", config.AppConfig.Test.Porkbun.Subdomain+"2")
 	q.Set("apikey", config.AppConfig.Test.Porkbun.ApiKey)

@@ -24,27 +24,27 @@ func init() {
 }
 
 func TestUpdateEndpointWithValidRequest(t *testing.T) {
-	testDnsInfo := &GandiDnsInfo{
+	testDnsInfo := &GandiDns{
 		IP:        config.AppConfig.Test.Gandi.IP,
 		Domain:    config.AppConfig.Test.Gandi.Domain,
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	err := testDnsInfo.SaveRecord()
 
 	assert.Nil(t, err)
 }
 
 func TestUpdateEndpointWithInvalidIp(t *testing.T) {
-	testDnsInfo := &GandiDnsInfo{
+	testDnsInfo := &GandiDns{
 		IP:        "::1",
 		Domain:    config.AppConfig.Test.Gandi.Domain,
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	err := testDnsInfo.SaveRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -52,13 +52,13 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 }
 
 func TestUpdateEndpointWithMissingParam(t *testing.T) {
-	testDnsInfo := &GandiDnsInfo{
+	testDnsInfo := &GandiDns{
 		Domain:    config.AppConfig.Test.Gandi.Domain,
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	err := testDnsInfo.SaveRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
@@ -67,13 +67,13 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 }
 
 func TestUpdateEndpointWithMissingAuth(t *testing.T) {
-	testDnsInfo := &GandiDnsInfo{
+	testDnsInfo := &GandiDns{
 		IP:        config.AppConfig.Test.Gandi.IP,
 		Domain:    config.AppConfig.Test.Gandi.Domain,
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 	}
 
-	err := testDnsInfo.AddRecord()
+	err := testDnsInfo.SaveRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusForbidden, err.Code)
@@ -82,14 +82,14 @@ func TestUpdateEndpointWithMissingAuth(t *testing.T) {
 }
 
 func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
-	testDnsInfo := &GandiDnsInfo{
+	testDnsInfo := &GandiDns{
 		Domain:    "example.com",
 		IP:        config.AppConfig.Test.Gandi.IP,
 		Subdomain: config.AppConfig.Test.Gandi.Subdomain,
 		ApiKey:    config.AppConfig.Test.Gandi.ApiKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	err := testDnsInfo.SaveRecord()
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusNotFound, err.Code)

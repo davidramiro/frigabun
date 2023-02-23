@@ -14,7 +14,10 @@ import (
 func main() {
 	logger.InitLog()
 
-	config.InitConfig()
+	err := config.InitConfig()
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("error initializing config")
+	}
 
 	initEcho()
 }

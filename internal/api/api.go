@@ -56,25 +56,25 @@ func HandleUpdateRequest(c echo.Context) error {
 
 	for i := range subdomains {
 		if request.Registrar == "gandi" {
-			dnsInfo := &gandi.GandiDnsInfo{
+			dns := &gandi.GandiDns{
 				IP:        request.IP,
 				Domain:    request.Domain,
 				Subdomain: subdomains[i],
 				ApiKey:    request.ApiKey,
 			}
-			err := dnsInfo.AddRecord()
+			err := dns.SaveRecord()
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}
 		} else if request.Registrar == "porkbun" {
-			dnsInfo := &porkbun.PorkbunDnsInfo{
+			dns := &porkbun.PorkbunDns{
 				IP:           request.IP,
 				Domain:       request.Domain,
 				Subdomain:    subdomains[i],
 				ApiKey:       request.ApiKey,
 				SecretApiKey: request.ApiSecretKey,
 			}
-			err := dnsInfo.AddRecord()
+			err := dns.AddRecord()
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}

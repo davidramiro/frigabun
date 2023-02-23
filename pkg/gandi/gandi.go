@@ -11,7 +11,7 @@ import (
 	"github.com/davidramiro/frigabun/internal/logger"
 )
 
-type GandiDnsInfo struct {
+type GandiDns struct {
 	IP        string
 	Domain    string
 	Subdomain string
@@ -30,7 +30,7 @@ type GandiUpdateError struct {
 	Message string
 }
 
-func (g *GandiDnsInfo) AddRecord() *GandiUpdateError {
+func (g *GandiDns) SaveRecord() *GandiUpdateError {
 
 	gandiRequest := &GandiApiRequest{
 		Subdomain: g.Subdomain,

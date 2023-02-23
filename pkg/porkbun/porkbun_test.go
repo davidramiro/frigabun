@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/davidramiro/frigabun/internal/config"
+	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,21 +25,26 @@ func init() {
 }
 
 func TestUpdateEndpointWithValidRequest(t *testing.T) {
-	testDnsInfo := &PorkbunDnsInfo{
-		IP:           config.AppConfig.Test.Porkbun.IP,
+	testDnsInfo := &PorkbunDns{
+		IP:           faker.IPv4(),
 		Domain:       config.AppConfig.Test.Porkbun.Domain,
 		Subdomain:    config.AppConfig.Test.Porkbun.Subdomain,
 		ApiKey:       config.AppConfig.Test.Porkbun.ApiKey,
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	testDnsInfo.Domain = config.AppConfig.Test.Porkbun.Domain
+	testDnsInfo.Subdomain = config.AppConfig.Test.Porkbun.Subdomain
+	testDnsInfo.ApiKey = config.AppConfig.Test.Porkbun.ApiKey
+	testDnsInfo.SecretApiKey = config.AppConfig.Test.Porkbun.ApiSecretKey
 
-	assert.Nil(t, err)
+	dnsErr := testDnsInfo.AddRecord()
+
+	assert.Nil(t, dnsErr)
 }
 
 func TestUpdateEndpointWithInvalidIp(t *testing.T) {
-	testDnsInfo := &PorkbunDnsInfo{
+	testDnsInfo := &PorkbunDns{
 		IP:           "::1",
 		Domain:       config.AppConfig.Test.Porkbun.Domain,
 		Subdomain:    config.AppConfig.Test.Porkbun.Subdomain,
@@ -50,11 +56,11 @@ func TestUpdateEndpointWithInvalidIp(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusBadRequest, err.Code)
-	assert.Contains(t, err.Message, "unable to create")
+	assert.Contains(t, err.Message, "unable to")
 }
 
 func TestUpdateEndpointWithMissingParam(t *testing.T) {
-	testDnsInfo := &PorkbunDnsInfo{
+	testDnsInfo := &PorkbunDns{
 		Domain:       config.AppConfig.Test.Porkbun.Domain,
 		Subdomain:    config.AppConfig.Test.Porkbun.Subdomain,
 		ApiKey:       config.AppConfig.Test.Porkbun.ApiKey,
@@ -70,33 +76,37 @@ func TestUpdateEndpointWithMissingParam(t *testing.T) {
 }
 
 func TestUpdateEndpointWithMissingAuth(t *testing.T) {
-	testDnsInfo := &PorkbunDnsInfo{
-		IP:        config.AppConfig.Test.Porkbun.IP,
+	testDnsInfo := &PorkbunDns{
+		IP:        faker.IPv4(),
 		Domain:    config.AppConfig.Test.Porkbun.Domain,
 		Subdomain: config.AppConfig.Test.Porkbun.Subdomain,
 	}
 
-	err := testDnsInfo.AddRecord()
+	dnsErr := testDnsInfo.AddRecord()
 
-	assert.NotNil(t, err)
-	assert.Equal(t, http.StatusBadRequest, err.Code)
-	assert.Contains(t, err.Message, "API key")
+	assert.NotNil(t, dnsErr)
+	assert.Equal(t, http.StatusBadRequest, dnsErr.Code)
+	assert.Contains(t, dnsErr.Message, "API key")
 
 }
 
 func TestUpdateEndpointWithInvalidDomain(t *testing.T) {
-	testDnsInfo := &PorkbunDnsInfo{
-		Domain:       "example.com",
-		IP:           config.AppConfig.Test.Porkbun.IP,
+	testDnsInfo := &PorkbunDns{
+		Domain:       faker.DomainName(),
+		IP:           faker.IPv4(),
 		Subdomain:    config.AppConfig.Test.Porkbun.Subdomain,
 		ApiKey:       config.AppConfig.Test.Porkbun.ApiKey,
 		SecretApiKey: config.AppConfig.Test.Porkbun.ApiSecretKey,
 	}
 
-	err := testDnsInfo.AddRecord()
+	testDnsInfo.Subdomain = config.AppConfig.Test.Porkbun.Subdomain
+	testDnsInfo.ApiKey = config.AppConfig.Test.Porkbun.ApiKey
+	testDnsInfo.SecretApiKey = config.AppConfig.Test.Porkbun.ApiSecretKey
 
-	assert.NotNil(t, err)
-	assert.Equal(t, http.StatusBadRequest, err.Code)
-	assert.Contains(t, err.Message, "Invalid domain")
+	dnsErr := testDnsInfo.AddRecord()
+
+	assert.NotNil(t, dnsErr)
+	assert.Equal(t, http.StatusBadRequest, dnsErr.Code)
+	assert.Contains(t, dnsErr.Message, "Invalid domain")
 
 }
