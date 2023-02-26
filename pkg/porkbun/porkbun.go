@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/davidramiro/frigabun/internal/logger"
@@ -53,10 +54,14 @@ func (p *PorkbunDns) AddRecord() *PorkbunUpdateError {
 
 	queryErr := porkbunRequest.queryRecord(p)
 
+	time.Sleep(2 * time.Second)
+
 	if queryErr != nil && queryErr.Code == 409 {
 
 		logger.Log.Info().Msg("record exists, updating")
 		updateErr := porkbunRequest.updateRecord(p)
+
+		time.Sleep(2 * time.Second)
 
 		if updateErr != nil {
 			logger.Log.Error().Str("err", updateErr.Message).Msg("porkbun rejected updated record")
@@ -65,6 +70,9 @@ func (p *PorkbunDns) AddRecord() *PorkbunUpdateError {
 
 	} else {
 		createErr := porkbunRequest.createRecord(p)
+
+		time.Sleep(2 * time.Second)
+
 		if createErr != nil {
 			logger.Log.Error().Str("err", createErr.Message).Msg("porkbun rejected new record")
 			return &PorkbunUpdateError{Code: 400, Message: createErr.Message}
