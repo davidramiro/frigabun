@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-faker/faker/v4 v4.1.0
-	github.com/rs/zerolog v1.29.1
+	github.com/rs/zerolog v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
