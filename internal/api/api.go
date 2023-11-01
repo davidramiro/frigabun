@@ -26,7 +26,7 @@ type UpdateRequest struct {
 	Subdomains   string `query:"subdomain"`
 	IP           string `query:"ip"`
 	ApiKey       string `query:"apikey"`
-	ApiSecretKey string `query:"apisecretkey"`
+	SecretApiKey string `query:"secretapikey"`
 	Registrar    string `query:"registrar"`
 }
 
@@ -72,7 +72,7 @@ func HandleUpdateRequest(c echo.Context) error {
 				Domain:       request.Domain,
 				Subdomain:    subdomains[i],
 				ApiKey:       request.ApiKey,
-				SecretApiKey: request.ApiSecretKey,
+				SecretApiKey: request.SecretApiKey,
 			}
 			err := dns.AddRecord()
 			if err != nil {
