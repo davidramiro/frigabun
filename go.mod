@@ -3,7 +3,7 @@ module github.com/davidramiro/frigabun
 go 1.20
 
 require (
-	github.com/go-faker/faker/v4 v4.1.0
+	github.com/go-faker/faker/v4 v4.2.1
 	github.com/rs/zerolog v1.29.1
 	gopkg.in/yaml.v3 v3.0.1
 )
