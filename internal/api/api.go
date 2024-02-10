@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/davidramiro/frigabun/pkg/cloudflare"
 	"net/http"
 	"strings"
 
@@ -75,6 +76,18 @@ func HandleUpdateRequest(c echo.Context) error {
 				SecretApiKey: request.ApiSecretKey,
 			}
 			err := dns.AddRecord()
+			if err != nil {
+				return c.String(err.Code, err.Message)
+			}
+		} else if request.Registrar == "cloudflare" {
+			dns := &cloudflare.CloudflareDns{
+				IP:        request.IP,
+				Domain:    request.Domain,
+				Subdomain: subdomains[i],
+				ApiKey:    request.ApiSecretKey,
+				ZoneId:    request.ApiKey,
+			}
+			err := dns.SaveRecord()
 			if err != nil {
 				return c.String(err.Code, err.Message)
 			}

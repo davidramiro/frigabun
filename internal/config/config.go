@@ -20,6 +20,11 @@ type Config struct {
 		TTL     int    `yaml:"ttl"`
 	} `yaml:"porkbun"`
 
+	Cloudflare struct {
+		BaseUrl string `yaml:"baseurl"`
+		TTL     int    `yaml:"ttl"`
+	} `yaml:"cloudflare"`
+
 	Api struct {
 		Port             string `yaml:"port"`
 		ApiKeyHidden     bool   `yaml:"hideApiKeyInLogs"`

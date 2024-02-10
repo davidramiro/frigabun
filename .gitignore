@@ -20,3 +20,5 @@ dist/
 go.work
 
 config.yml
+
+.idea/
