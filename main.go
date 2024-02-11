@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"github.com/spf13/viper"
 	"regexp"
 	"strings"
 
 	"github.com/davidramiro/frigabun/internal/api"
-	"github.com/davidramiro/frigabun/internal/config"
 	"github.com/davidramiro/frigabun/internal/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,9 +15,12 @@ import (
 func main() {
 	logger.InitLog()
 
-	err := config.InitConfig()
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("error initializing config")
+		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 
 	initEcho()
@@ -33,12 +37,12 @@ func initEcho() {
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 
 			uri := v.URI
-			if config.AppConfig.Api.ApiKeyHidden {
+			if viper.GetBool("api.hideApiKeyInLogs") {
 				re := regexp.MustCompile(`key=([^&]*)`)
 				uri = re.ReplaceAllString(v.URI, `key=**REDACTED**`)
 			}
 
-			if config.AppConfig.Api.StatusLogEnabled || !strings.Contains(v.URI, "/status") {
+			if viper.GetBool("api.enableStatusLog") || !strings.Contains(v.URI, "/status") {
 				logger.Log.Info().
 					Str("URI", uri).
 					Int("status", v.Status).
@@ -55,5 +59,6 @@ func initEcho() {
 	a.GET("/update", api.HandleUpdateRequest)
 	a.GET("/status", api.HandleStatusCheck)
 
-	e.Logger.Fatal(e.Start(":" + config.AppConfig.Api.Port))
+	endpoint := fmt.Sprintf(":%d", viper.GetInt("api.port"))
+	e.Logger.Fatal(e.Start(endpoint))
 }
