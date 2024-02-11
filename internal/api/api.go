@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/davidramiro/frigabun/services"
+	"github.com/davidramiro/frigabun/services/factory"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
@@ -12,7 +13,7 @@ import (
 )
 
 type UpdateApi struct {
-	dnsServiceFactory services.ServiceFactory
+	dnsServiceFactory factory.ServiceFactory
 }
 
 type StatusResponse struct {
@@ -27,7 +28,7 @@ type UpdateRequest struct {
 	Registrar  string `query:"registrar"`
 }
 
-func NewUpdateApi(dnsServiceFactory services.ServiceFactory) *UpdateApi {
+func NewUpdateApi(dnsServiceFactory factory.ServiceFactory) *UpdateApi {
 	return &UpdateApi{dnsServiceFactory: dnsServiceFactory}
 }
 

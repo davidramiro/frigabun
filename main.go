@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/davidramiro/frigabun/internal/api"
-	"github.com/davidramiro/frigabun/services"
+	"github.com/davidramiro/frigabun/services/factory"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
@@ -15,6 +15,7 @@ func main() {
 
 	log.Info().Msg("starting frigabun")
 	log.Info().Msg("reading config")
+
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(".")
@@ -48,7 +49,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
-	factory, err := services.NewDnsUpdateServiceFactory()
+	factory, err := factory.NewDnsUpdateServiceFactory()
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot init service factory")
 	}

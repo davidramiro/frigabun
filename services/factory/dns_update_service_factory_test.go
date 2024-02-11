@@ -1,10 +1,13 @@
-package services
+package factory
 
 import (
+	"github.com/davidramiro/frigabun/services"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+var factory *DnsUpdateServiceFactory
 
 func init() {
 	viper.Set("cloudflare.enabled", true)
@@ -21,11 +24,12 @@ func init() {
 	viper.Set("porkbun.apiKey", "foo")
 	viper.Set("porkbun.apiSecretKey", "bar")
 	viper.Set("porkbun.ttl", 42)
+
+	factory, _ = NewDnsUpdateServiceFactory()
 }
 
 func TestNewDnsUpdateServiceFactory(t *testing.T) {
-	factory, err := NewDnsUpdateServiceFactory()
-	assert.Nil(t, err, "no error on creating factory")
+
 	assert.Equal(t, 3, len(factory.ListServices()), "factory should contain 3 services")
 
 	service, err := factory.Find("cloudflare")
@@ -36,13 +40,10 @@ func TestNewDnsUpdateServiceFactory(t *testing.T) {
 }
 
 func TestDnsUpdateServiceFactory_ListServices(t *testing.T) {
-	factory, err := NewDnsUpdateServiceFactory()
-	assert.Nil(t, err, "no error on creating factory")
 	assert.Equal(t, 3, len(factory.ListServices()), "factory should contain 3 services")
 }
 
 func TestDnsUpdateServiceFactory_FindSuccess(t *testing.T) {
-	factory, _ := NewDnsUpdateServiceFactory()
 	service, err := factory.Find("cloudflare")
 
 	assert.Nil(t, err)
@@ -52,8 +53,27 @@ func TestDnsUpdateServiceFactory_FindSuccess(t *testing.T) {
 }
 
 func TestDnsUpdateServiceFactory_FindInvalidName(t *testing.T) {
-	factory, _ := NewDnsUpdateServiceFactory()
 	_, err := factory.Find("cloudbun")
+	assert.ErrorIs(t, err, services.ErrRegistrarNotFound)
+}
 
-	assert.Error(t, err)
+func TestNewDnsUpdateServiceFactory_MissingParamForPorkbun(t *testing.T) {
+	viper.Set("porkbun.baseUrl", "")
+	f, err := NewDnsUpdateServiceFactory()
+	assert.ErrorIs(t, err, services.ErrMissingInfoForServiceInit)
+	assert.Nil(t, f)
+}
+
+func TestNewDnsUpdateServiceFactory_MissingParamForCloudflare(t *testing.T) {
+	viper.Set("cloudflare.apiKey", "")
+	f, err := NewDnsUpdateServiceFactory()
+	assert.ErrorIs(t, err, services.ErrMissingInfoForServiceInit)
+	assert.Nil(t, f)
+}
+
+func TestNewDnsUpdateServiceFactory_MissingParamForGandi(t *testing.T) {
+	viper.Set("gandi.ttl", 0)
+	f, err := NewDnsUpdateServiceFactory()
+	assert.ErrorIs(t, err, services.ErrMissingInfoForServiceInit)
+	assert.Nil(t, f)
 }
