@@ -3,11 +3,11 @@ package api
 import (
 	"fmt"
 	"github.com/davidramiro/frigabun/services"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/davidramiro/frigabun/internal/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -36,11 +36,11 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 	err := c.Bind(&request)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg(ErrCannotParseRequest.Error())
+		log.Error().Err(err).Msg(ErrCannotParseRequest.Error())
 		return c.String(http.StatusBadRequest, ErrCannotParseRequest.Error())
 	}
 
-	logger.Log.Info().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Msg("request received")
+	log.Info().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Msg("request received")
 
 	err = validateRequest(request.Domain, request.IP)
 	if err != nil {
@@ -76,7 +76,7 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 		successfulUpdates++
 	}
 
-	logger.Log.Info().Int("updates", successfulUpdates).Str("subdomains", request.Subdomains).Str("domain", request.Domain).Msg("successfully created")
+	log.Info().Int("updates", successfulUpdates).Str("subdomains", request.Subdomains).Str("domain", request.Domain).Msg("successfully created")
 
 	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", successfulUpdates, request.Subdomains, request.Domain, request.IP))
 

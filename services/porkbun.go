@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/davidramiro/frigabun/internal/logger"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"io"
 	"net/http"
@@ -76,11 +76,11 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 
 	if exists {
 
-		logger.Log.Info().Msg("record exists, updating")
+		log.Info().Msg("record exists, updating")
 		err := p.updateRecord(request, porkbunRequest)
 
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("porkbun rejected updated record")
+			log.Error().Err(err).Msg("porkbun rejected updated record")
 			return errors.New("porkbun rejected updated record")
 		}
 
@@ -88,7 +88,7 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 		err := p.createRecord(request, porkbunRequest)
 
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("porkbun rejected new record")
+			log.Error().Err(err).Msg("porkbun rejected new record")
 			return errors.New("porkbun rejected new record")
 		}
 	}
@@ -99,7 +99,7 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 func (p *PorkbunDnsUpdateService) queryRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) (bool, error) {
 	endpoint := fmt.Sprintf("%s/dns/retrieveByNameType/%s/A/%s", p.baseUrl, request.Domain, request.Subdomain)
 
-	logger.Log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("checking if record exists")
+	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("checking if record exists")
 
 	var r PorkbunQueryResponse
 
@@ -112,7 +112,7 @@ func (p *PorkbunDnsUpdateService) queryRecord(request *DynDnsRequest, porkbunReq
 	err = json.Unmarshal(b, &r)
 
 	if resp.StatusCode != http.StatusOK || r.Status != "SUCCESS" || err != nil {
-		logger.Log.Error().Msg("could not query record:" + string(b))
+		log.Error().Msg("could not query record:" + string(b))
 		return false, fmt.Errorf("could not query record: %s", string(b))
 	}
 
@@ -130,7 +130,7 @@ func (p *PorkbunDnsUpdateService) queryRecord(request *DynDnsRequest, porkbunReq
 func (p *PorkbunDnsUpdateService) createRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) error {
 	endpoint := fmt.Sprintf("%s/dns/create/%s", p.baseUrl, request.Domain)
 
-	logger.Log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("creating new record")
+	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("creating new record")
 
 	resp, err := p.executeRequest(endpoint, porkbunRequest)
 	if err != nil {
@@ -148,7 +148,7 @@ func (p *PorkbunDnsUpdateService) createRecord(request *DynDnsRequest, porkbunRe
 func (p *PorkbunDnsUpdateService) updateRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) error {
 	endpoint := fmt.Sprintf("%s/dns/editByNameType/%s/A/%s", p.baseUrl, request.Domain, request.Subdomain)
 
-	logger.Log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("updating record")
+	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("updating record")
 
 	resp, err := p.executeRequest(endpoint, porkbunRequest)
 	if err != nil {
@@ -166,13 +166,13 @@ func (p *PorkbunDnsUpdateService) updateRecord(request *DynDnsRequest, porkbunRe
 func (p *PorkbunDnsUpdateService) executeRequest(endpoint string, porkbunRequest *PorkbunApiRequest) (*http.Response, error) {
 	body, err := json.Marshal(porkbunRequest)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("marshalling failed")
+		log.Error().Err(err).Msg("marshalling failed")
 		return nil, errors.New("could not parse request")
 	}
 
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("building request failed failed")
+		log.Error().Err(err).Msg("building request failed failed")
 		return nil, errors.New("could not create request for porkbun")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -181,7 +181,7 @@ func (p *PorkbunDnsUpdateService) executeRequest(endpoint string, porkbunRequest
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("executing request failed")
+		log.Error().Err(err).Msg("executing request failed")
 		return nil, errors.New("could not execute request")
 	}
 

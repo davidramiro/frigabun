@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"io"
 	"net/http"
-
-	"github.com/davidramiro/frigabun/internal/logger"
 )
 
 type CloudflareDnsUpdateService struct {
@@ -77,7 +76,7 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	err = json.Unmarshal(b, &r)
 
 	if resp.StatusCode != http.StatusOK || len(r.Errors) > 0 || err != nil {
-		logger.Log.Error().Msg("could not query record:" + string(b))
+		log.Error().Msg("could not query record:" + string(b))
 		return errors.New("could not query record: " + string(b))
 	}
 
@@ -108,17 +107,17 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records", c.baseUrl,
 		c.zoneId)
-	logger.Log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
+	log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
 
 	body, err := json.Marshal(cloudflareRequest)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("marshalling failed")
+		log.Error().Err(err).Msg("marshalling failed")
 		return errors.New("could not parse request")
 	}
 
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("building request failed failed")
+		log.Error().Err(err).Msg("building request failed failed")
 		return errors.New("could not create request for cloudflare")
 	}
 
@@ -129,13 +128,13 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("executing request failed")
+		log.Error().Err(err).Msg("executing request failed")
 		return errors.New("could execute request")
 	}
 
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msg("gandi rejected request")
+		log.Error().Msg("gandi rejected request")
 		return fmt.Errorf("cloudflare rejected request: %s", string(b))
 	}
 
@@ -152,17 +151,17 @@ func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, 
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records/%s", c.baseUrl,
 		c.zoneId, id)
-	logger.Log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
+	log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
 
 	body, err := json.Marshal(cloudflareRequest)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("marshalling failed")
+		log.Error().Err(err).Msg("marshalling failed")
 		return errors.New("could not parse request")
 	}
 
 	req, err := http.NewRequest("PUT", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("building request failed failed")
+		log.Error().Err(err).Msg("building request failed failed")
 		return errors.New("could not create request for cloudflare")
 	}
 
@@ -173,13 +172,13 @@ func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, 
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("executing request failed")
+		log.Error().Err(err).Msg("executing request failed")
 		return errors.New("could execute request")
 	}
 
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msg("gandi rejected request")
+		log.Error().Msg("gandi rejected request")
 		return fmt.Errorf("cloudflare rejected request: %s", string(b))
 	}
 
