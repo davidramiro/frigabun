@@ -1,45 +1,44 @@
 package main
 
 import (
-	"regexp"
-	"strings"
-
+	"fmt"
 	"github.com/davidramiro/frigabun/internal/api"
-	"github.com/davidramiro/frigabun/internal/config"
-	"github.com/davidramiro/frigabun/internal/logger"
+	"github.com/davidramiro/frigabun/services/factory"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
+	"strings"
 )
 
 func main() {
-	logger.InitLog()
 
-	err := config.InitConfig()
+	log.Info().Msg("starting frigabun")
+	log.Info().Msg("reading config")
+
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("error initializing config")
+		log.Fatal().Err(err).Msg("could not read config file")
 	}
 
-	initEcho()
-}
-
-func initEcho() {
-	logger.Log.Info().Msg("setting up echo...")
+	log.Info().Msg("setting up server")
 
 	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+
+	enableStatusLog := viper.GetBool("api.enableStatusLog")
 
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-
 			uri := v.URI
-			if config.AppConfig.Api.ApiKeyHidden {
-				re := regexp.MustCompile(`key=([^&]*)`)
-				uri = re.ReplaceAllString(v.URI, `key=**REDACTED**`)
-			}
-
-			if config.AppConfig.Api.StatusLogEnabled || !strings.Contains(v.URI, "/status") {
-				logger.Log.Info().
+			if enableStatusLog || !strings.Contains(v.URI, "/status") {
+				log.Info().
 					Str("URI", uri).
 					Int("status", v.Status).
 					Msg("request")
@@ -50,10 +49,18 @@ func initEcho() {
 	}))
 	e.Use(middleware.Recover())
 
-	a := e.Group("/api")
+	serviceFactory, err := factory.NewDnsUpdateServiceFactory()
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot init service serviceFactory")
+	}
 
-	a.GET("/update", api.HandleUpdateRequest)
-	a.GET("/status", api.HandleStatusCheck)
+	updateApi := api.NewUpdateApi(serviceFactory)
+	g := e.Group("/api")
+	g.GET("/update", updateApi.HandleUpdateRequest)
+	g.GET("/status", updateApi.HandleStatusCheck)
 
-	e.Logger.Fatal(e.Start(":" + config.AppConfig.Api.Port))
+	endpoint := fmt.Sprintf(":%d", viper.GetInt("api.port"))
+	log.Info().Str("port", endpoint).Msg("starting server")
+
+	log.Fatal().Err(e.Start(endpoint)).Msg("server error")
 }

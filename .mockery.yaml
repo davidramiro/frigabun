@@ -1,0 +1,12 @@
+with-expecter: True
+outpkg: "mock_{{.PackageName}}"
+packages:
+  github.com/davidramiro/frigabun/services:
+    interfaces:
+      DnsUpdateService:
+      HTTPClient:
+  github.com/davidramiro/frigabun/services/factory:
+    interfaces:
+      ServiceFactory:
+    config:
+      all: True

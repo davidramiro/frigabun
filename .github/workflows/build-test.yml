@@ -16,10 +16,16 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.20.0'
-      - name: Create config.yml from secrets
-        run: echo -n "${{ secrets.CONFIG_YML }}" | base64 --decode > config.yml
+          go-version: '>=1.22.0'
+      - name: Install mockery
+        run: go install github.com/vektra/mockery/v2@v2.40.3
+      - name: Generate mocks
+        run: mockery
       - name: Build
         run: go build -v ./...
       - name: Test with the Go CLI
-        run: go test -v ./...
+        run: go test ./... -coverprofile="cover.out" -covermode=atomic -coverpkg=./...
+      - name: check test coverage
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: ./.testcoverage.yml

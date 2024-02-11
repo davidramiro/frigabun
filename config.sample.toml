@@ -1,0 +1,24 @@
+[api]
+port = 9595
+enableStatusLog = false
+
+[gandi]
+enabled = true
+baseUrl = "https://dns.api.gandi.net/api/v5"
+ttl = 1800
+apiKey = ""
+
+[porkbun]
+enabled = false
+baseUrl = "https://porkbun.com/api/json/v3"
+apiKey = ""
+secretApiKey = ""
+ttl = 1800
+
+[cloudflare]
+enabled = false
+baseUrl = "https://api.cloudflare.com/client/v4"
+apiKey = ""
+zoneId = ""
+ttl = 1800
+

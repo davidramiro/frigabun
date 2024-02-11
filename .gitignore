@@ -19,6 +19,8 @@ dist/
 # Go workspace file
 go.work
 
-config.yml
+config.toml
 
 .idea/
+
+mocks/

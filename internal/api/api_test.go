@@ -1,188 +1,210 @@
 package api
 
 import (
-	"io"
+	"encoding/json"
+	"errors"
+	"fmt"
+	mockservices "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
+	mockfactory "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services/factory"
+	"github.com/davidramiro/frigabun/services"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path"
-	"runtime"
 	"testing"
-
-	"github.com/davidramiro/frigabun/internal/config"
-	"github.com/go-faker/faker/v4"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	// make sure we're in project root for tests
-	_, filename, _, _ := runtime.Caller(0)
-	dir := path.Join(path.Dir(filename), "../..")
-	err := os.Chdir(dir)
-	if err != nil {
-		panic(err)
-	}
+var updateApi *UpdateApi
 
-	config.InitConfig()
+func init() {
+
 }
 
-func TestStatusEndpoint(t *testing.T) {
-
+func TestStatusEndpointOk(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	// Assertions
-	if assert.NoError(t, HandleStatusCheck(c)) {
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("ListServices").Return([]services.Registrar{"cloudflare", "gandi"}).Once()
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleStatusCheck(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "\"api_status\":true")
+
+		var status StatusResponse
+		err := json.Unmarshal(rec.Body.Bytes(), &status)
+
+		assert.Nil(t, err)
+		assert.Equal(t, true, status.ApiStatus)
+		assert.Equal(t, 2, len(status.ActiveServices))
+	}
+}
+
+func TestUpdateEndpointMissingSubdomain(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "porkbun")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, ErrMissingParameter.Error(), rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointInvalidIP(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "")
+	q.Set("ip", "10.0,0.1")
+	q.Set("registrar", "porkbun")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, ErrInvalidIP.Error(), rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointInvalidRegistrar(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "bar")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "porkbun")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("Find", services.Registrar("porkbun")).Return(nil, errors.New("cannot find registrar porkbun"))
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, "cannot find registrar porkbun", rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointFailureInService(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "bar")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "cloudflare")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	cs := mockservices.NewMockDnsUpdateService(t)
+	cs.On("UpdateRecord", mock.Anything).Return(errors.New("failed to update")).Once()
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once()
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Equal(t, "failed to update", rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointSuccessSingleSubdomain(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "bar")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "cloudflare")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	cs := mockservices.NewMockDnsUpdateService(t)
+	cs.On("UpdateRecord", mock.Anything).Return(nil).Once()
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once()
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "created 1 entries for subdomains bar on foo.com: 10.0.0.1", rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointSuccessThreeSubdomains(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("subdomain", "foo,bar,baz")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "cloudflare")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	cs := mockservices.NewMockDnsUpdateService(t)
+	cs.On("UpdateRecord", mock.Anything).Return(nil).Times(3)
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once().Times(3)
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "created 3 entries for subdomains foo,bar,baz on foo.com: 10.0.0.1", rec.Body.String())
 	}
 }
 
 func TestValidDomainAndIp(t *testing.T) {
 	err := validateRequest("domain.com", "1.1.1.1")
-
 	assert.Nil(t, err, "valid domain and ip should not return error")
 }
 
 func TestInvalidIPv4(t *testing.T) {
 	err := validateRequest("domain.com", "::1")
-
-	assert.Equal(t, 400, err.Code, "invalid IPv4 should return error")
+	assert.Equal(t, ErrInvalidIP, err, "invalid IPv4 should return error")
 }
 
 func TestInvalidDomain(t *testing.T) {
 	err := validateRequest("domain .com", "1.1.1.1")
-
-	assert.Equal(t, 400, err.Code, "invalid domain should return error")
-}
-
-func TestGandiUpdateWithValidRequest(t *testing.T) {
-	q := make(url.Values)
-	q.Set("ip", faker.IPv4())
-	q.Set("domain", config.AppConfig.Test.Gandi.Domain)
-	q.Set("subdomain", config.AppConfig.Test.Gandi.Subdomain+"2")
-	q.Set("apiKey", config.AppConfig.Test.Gandi.ApiKey)
-	q.Set("registrar", "gandi")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "created")
-	}
-}
-
-func TestPorkbunUpdateWithValidRequest(t *testing.T) {
-	q := make(url.Values)
-	q.Set("ip", faker.IPv4())
-	q.Set("domain", config.AppConfig.Test.Porkbun.Domain)
-	q.Set("subdomain", config.AppConfig.Test.Porkbun.Subdomain+"2")
-	q.Set("apikey", config.AppConfig.Test.Porkbun.ApiKey)
-	q.Set("apisecretkey", config.AppConfig.Test.Porkbun.ApiSecretKey)
-	q.Set("registrar", "porkbun")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "created")
-	}
-}
-
-func TestGandiUpdateWithInvalidIp(t *testing.T) {
-	q := make(url.Values)
-	q.Set("ip", "::1")
-	q.Set("domain", "domain.com")
-	q.Set("subdomain", "test1,test2")
-	q.Set("apiKey", "foo")
-	q.Set("registrar", "gandi")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "invalid IP address")
-	}
-}
-
-func TestGandiUpdateWithMissingParam(t *testing.T) {
-	q := make(url.Values)
-	q.Set("ip", "1.2.3.4")
-	q.Set("subdomain", "test1,test2")
-	q.Set("apiKey", "foo")
-	q.Set("registrar", "gandi")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "missing or invalid domain name")
-	}
-}
-
-func TestGandiUpdateWithInvalidMissingSubdomains(t *testing.T) {
-	q := make(url.Values)
-	q.Set("ip", "1.2.3.4")
-	q.Set("domain", "domain.com")
-	q.Set("apiKey", "foo")
-	q.Set("registrar", "gandi")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "missing subdomains parameter")
-	}
-}
-
-func TestGandiUpdateWithInvalidApiKey(t *testing.T) {
-	// Setup
-	q := make(url.Values)
-	q.Set("ip", "1.2.3.4")
-	q.Set("domain", "domain.com")
-	q.Set("subdomain", "test1,test2")
-	q.Set("apiKey", "foo")
-	q.Set("registrar", "gandi")
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/?"+q.Encode(), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusForbidden, rec.Code)
-		b, _ := io.ReadAll(rec.Body)
-		assert.Contains(t, string(b), "gandi rejected request")
-	}
+	assert.Equal(t, ErrInvalidDomain, err, "invalid domain should return error")
 }
