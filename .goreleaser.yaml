@@ -18,7 +18,7 @@ archives:
       386: i386
       amd64: x86_64
     files:
-    - config.sample.yml
+    - config.sample.toml
     format_overrides:
       - goos: windows
         format: zip
