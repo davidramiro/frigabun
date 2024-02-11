@@ -1,18 +1,20 @@
 # frigabun
 
-Web service to allow FritzBox routers to update Gandi and Porkbun DNS entries when obtaining a new IP address.
-Uses the new LiveDNS API. Written in Go 1.20
+Web service to allow FritzBox routers to update Gandi, Cloudflare and Porkbun DNS entries when obtaining a new IP address.
 
 ## Requirements
-- A domain name on Gandi or Porkbun
-- Gandi or Porkbun API credentials
+- A domain name on Gandi, Porkbun or Cloudflare
+- Gandi, Porkbun or Cloudflare API credentials
 - FritzBox router with up-to-date firmware
 - Optional: To build or run manually: Go 1.20
 
 ## Set up service
 
 - Download the [latest](https://github.com/davidramiro/frigabun/releases/latest) release archive for your OS/arch
-- Unzip, rename `config.sample.yml` to `config.yml` (config is fine as default, if you want to run tests, fill in your API info)
+- Unzip, rename `config.sample.toml` to `config.toml`
+- Add credentials to the registrars you want to use and set `enabled` to `true`
+
+## Obtaining credentials
 
 ### Gandi
 
@@ -20,21 +22,6 @@ Uses the new LiveDNS API. Written in Go 1.20
   - Go to [Account settings](https://account.gandi.net/en)
   - Choose Authentication options 
   - Generate an API key on the bottom of the page
-- Log into your FritzBox
-- Navigate to `Internet` -> `Permit Access` -> `DynDNS`
-- Enable DynDNS and use `User-defined` as Provider
-- Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=gandi`
-  - Replace the `{HOST}` and `{PORT}` with your deployment of the application
-    - By default, the application uses port `9595`
-  - Replace `{DOMAIN}` with your base domain
-    - e.g. `yourdomain.com`
-  - Replace `{SUBDOMAIN}` with your subdomain or comma separated subdomains
-    - e.g. `subdomain` or `sudomain1,subdomain2`
-- Enter the full domain in the `Domain Name` field
-  - e.g. `subdomain.domain.com` (if you use multiple subdomains, just choose any of those)
-- Enter any value in the `Username` field
-  - Unused, but required by the FritzBox interface
-- Enter your Gandi API-Key in the `Password` field
 
 ### Porkbun
 
@@ -43,10 +30,18 @@ Uses the new LiveDNS API. Written in Go 1.20
   - Create an API key, note down API key and API secret key
   - Go to [domain management](https://porkbun.com/account/domains)
   - Expand the details of your domain and enable the API access toggle on every domain you want to manage via frigabun
+
+### Cloudflare
+
+- Get your `zoneId` as per [this article](https://developers.cloudflare.com/fundamentals/setup/find-account-and-zone-ids/)
+- Create an API token on [this page](https://dash.cloudflare.com/profile/api-tokens)
+  - Make sure to set `Zone.DNS` permissions and set it to the zone your domain is in
+
+## FritzBox Setup
 - Log into your FritzBox
 - Navigate to `Internet` -> `Permit Access` -> `DynDNS`
 - Enable DynDNS and use `User-defined` as Provider
-- Enter the following URL: `http://{HOST}:{PORT}/api/update?apikey=<username>&secretapikey=<passwd>&domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=porkbun`
+- Enter the following URL: `http://{HOST}:{PORT}/api/update?domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=gandi`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
   - Replace `{DOMAIN}` with your base domain
@@ -55,9 +50,8 @@ Uses the new LiveDNS API. Written in Go 1.20
     - e.g. `subdomain` or `sudomain1,subdomain2`
 - Enter the full domain in the `Domain Name` field
   - e.g. `subdomain.domain.com` (if you use multiple subdomains, just choose any of those)
-- Enter your Porkbun API key in the `Username` field
-- Enter your Porkbun API Secret Key in the `Password` field
-
+- Enter any value in the `Username` and `Password` fields
+  - Unused, but required by the FritzBox interface
 
 Your settings should look something like this:
 
