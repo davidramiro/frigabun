@@ -12,7 +12,7 @@ apiKey = ""
 enabled = false
 baseUrl = "https://porkbun.com/api/json/v3"
 apiKey = ""
-apiSecretKey = ""
+secretApiKey = ""
 ttl = 1800
 
 [cloudflare]

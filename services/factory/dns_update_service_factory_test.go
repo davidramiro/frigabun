@@ -22,7 +22,7 @@ func init() {
 	viper.Set("porkbun.enabled", true)
 	viper.Set("porkbun.baseurl", "https://api.foo.com/client/v4")
 	viper.Set("porkbun.apiKey", "foo")
-	viper.Set("porkbun.apiSecretKey", "bar")
+	viper.Set("porkbun.secretApiKey", "bar")
 	viper.Set("porkbun.ttl", 42)
 
 	factory, _ = NewDnsUpdateServiceFactory()

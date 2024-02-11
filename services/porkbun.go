@@ -14,7 +14,7 @@ import (
 type PorkbunDnsUpdateService struct {
 	registrarSettings
 	apiKey       string
-	apiSecretKey string
+	secretApiKey string
 	client       HTTPClient
 }
 
@@ -22,7 +22,7 @@ func NewPorkbunDnsUpdateService(client HTTPClient) (*PorkbunDnsUpdateService, er
 	baseUrl := viper.GetString("porkbun.baseUrl")
 	ttl := viper.GetInt("porkbun.ttl")
 	apikey := viper.GetString("porkbun.apiKey")
-	apiSecretkey := viper.GetString("porkbun.apiSecretKey")
+	SecretApiKey := viper.GetString("porkbun.secretApiKey")
 
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 {
 		return nil, ErrMissingInfoForServiceInit
@@ -38,7 +38,7 @@ func NewPorkbunDnsUpdateService(client HTTPClient) (*PorkbunDnsUpdateService, er
 			ttl:     ttl,
 		},
 		apiKey:       apikey,
-		apiSecretKey: apiSecretkey,
+		secretApiKey: SecretApiKey,
 		client:       client,
 	}, nil
 }
@@ -72,7 +72,7 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 		TTL:          p.ttl,
 		Type:         "A",
 		ApiKey:       p.apiKey,
-		SecretApiKey: p.apiSecretKey,
+		SecretApiKey: p.secretApiKey,
 	}
 
 	exists, err := p.queryRecordExists(request, porkbunRequest)
