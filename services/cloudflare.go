@@ -23,6 +23,9 @@ func NewCloudflareDnsUpdateService(client HTTPClient) (*CloudflareDnsUpdateServi
 	ttl := viper.GetInt("cloudflare.ttl")
 	apikey := viper.GetString("cloudflare.apiKey")
 	zoneId := viper.GetString("cloudflare.zoneId")
+
+	log.Info().Msg("initializing cloudflare service")
+
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 || len(zoneId) == 0 {
 		return nil, ErrMissingInfoForServiceInit
 	}
@@ -64,6 +67,9 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records", c.baseUrl,
 		c.zoneId)
 
+	logger := log.With().Str("func", "UpdateRecord").Str("registrar", "cloudflare").Str("endpoint", endpoint).Str("domain", request.Domain).Str("subdomain", request.Subdomain).Logger()
+	logger.Info().Msg("building update request")
+
 	req, err := http.NewRequest("GET", endpoint, nil)
 
 	var r CloudflareQueryResponse
@@ -73,14 +79,20 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return errors.New("error getting cloudflare request")
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return ErrBuildingRequest
 	}
 
 	b, _ := io.ReadAll(resp.Body)
 	err = json.Unmarshal(b, &r)
 
-	if resp.StatusCode != http.StatusOK || len(r.Errors) > 0 || err != nil {
-		log.Error().Msg("could not query record:" + string(b))
+	if err != nil {
+		logger.Error().Err(err).Msg(ErrParsingResponse.Error())
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK || len(r.Errors) > 0 {
+		logger.Error().Interface("response", b).Msg("could not query record")
 		return errors.New("could not query record: " + string(b))
 	}
 
@@ -95,8 +107,10 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	}
 
 	if len(id) == 0 {
+		logger.Info().Msg("entry not found, creating new")
 		return c.newRecord(request)
 	} else {
+		logger.Info().Msg("entry found, updating")
 		return c.editExistingRecord(request, id)
 	}
 }
@@ -111,34 +125,39 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records", c.baseUrl,
 		c.zoneId)
-	log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
+
+	logger := log.With().Str("func", "newRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
+	logger.Info().Msg("building new record request")
 
 	body, err := json.Marshal(cloudflareRequest)
 	if err != nil {
-		log.Error().Err(err).Msg("marshalling failed")
-		return errors.New("could not parse request")
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return ErrBuildingRequest
 	}
 
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		log.Error().Err(err).Msg("building request failed failed")
-		return errors.New("could not create request for cloudflare")
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return ErrBuildingRequest
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
 
+	logger.Info().Msg("executing request")
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("executing request failed")
-		return errors.New("could not execute request")
+		logger.Error().Err(err).Msg(ErrExecutingRequest.Error())
+		return ErrExecutingRequest
 	}
 
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		log.Error().Msg("gandi rejected request")
-		return fmt.Errorf("cloudflare rejected request: %s", string(b))
+		logger.Error().Bytes("response", b).Msg(ErrRegistrarRejectedRequest.Error())
+		return ErrRegistrarRejectedRequest
 	}
+
+	logger.Info().Msg("request for new record successful")
 
 	return nil
 }
@@ -153,17 +172,19 @@ func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, 
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records/%s", c.baseUrl,
 		c.zoneId, id)
-	log.Info().Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Msg("building update request")
+
+	logger := log.With().Str("func", "editExistingRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
+	logger.Info().Msg("building request to edit record")
 
 	body, err := json.Marshal(cloudflareRequest)
 	if err != nil {
-		log.Error().Err(err).Msg("marshalling failed")
+		logger.Error().Err(err).Msg("marshalling failed")
 		return errors.New("could not parse request")
 	}
 
 	req, err := http.NewRequest("PUT", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		log.Error().Err(err).Msg("building request failed failed")
+		logger.Error().Err(err).Msg("building request failed failed")
 		return errors.New("could not create request for cloudflare")
 	}
 
@@ -172,13 +193,13 @@ func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, 
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("executing request failed")
+		logger.Error().Err(err).Msg("executing request failed")
 		return errors.New("could not execute request")
 	}
 
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		log.Error().Msg("cloudflare rejected request")
+		logger.Error().Bytes("response", b).Msg("cloudflare rejected request")
 		return fmt.Errorf("cloudflare rejected request: %s", string(b))
 	}
 

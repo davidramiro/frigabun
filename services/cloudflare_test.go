@@ -234,7 +234,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord_ApiError(t *testing.T
 
 	err = registrar.UpdateRecord(dynReq)
 
-	assert.EqualError(t, err, "cloudflare rejected request: api error")
+	assert.EqualError(t, err, services.ErrRegistrarRejectedRequest.Error())
 }
 
 func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord_ApiError(t *testing.T) {
@@ -363,5 +363,5 @@ func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord_RequestError(t *testi
 
 	err = registrar.UpdateRecord(dynReq)
 
-	assert.EqualError(t, err, "could not execute request")
+	assert.EqualError(t, err, services.ErrExecutingRequest.Error())
 }

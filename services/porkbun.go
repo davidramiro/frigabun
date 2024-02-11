@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -23,6 +22,8 @@ func NewPorkbunDnsUpdateService(client HTTPClient) (*PorkbunDnsUpdateService, er
 	ttl := viper.GetInt("porkbun.ttl")
 	apikey := viper.GetString("porkbun.apiKey")
 	SecretApiKey := viper.GetString("porkbun.secretApiKey")
+
+	log.Info().Msg("initializing porkbun service")
 
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 {
 		return nil, ErrMissingInfoForServiceInit
@@ -75,30 +76,35 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 		SecretApiKey: p.secretApiKey,
 	}
 
-	exists, err := p.queryRecordExists(request, porkbunRequest)
+	logger := log.With().Str("func", "UpdateRecord").Str("registrar", "porkbun").Str("domain", request.Domain).Str("subdomain", request.Subdomain).Logger()
+	logger.Info().Msg("building update request")
 
+	exists, err := p.queryRecordExists(request, porkbunRequest)
 	if err != nil {
+		logger.Err(err).Msg("error querying if record exists")
 		return err
 	}
 
 	if exists {
-
-		log.Info().Msg("record exists, updating")
+		logger.Info().Msg("record exists, updating")
 		err := p.updateRecord(request, porkbunRequest)
 
 		if err != nil {
-			log.Error().Err(err).Msg("porkbun rejected updated record")
-			return errors.New("porkbun rejected updated record")
+			logger.Error().Err(err).Msg(ErrRegistrarRejectedRequest.Error())
+			return ErrRegistrarRejectedRequest
 		}
 
 	} else {
+		logger.Info().Msg("record does not exist, creating")
 		err := p.createRecord(request, porkbunRequest)
 
 		if err != nil {
-			log.Error().Err(err).Msg("porkbun rejected new record")
-			return errors.New("porkbun rejected new record")
+			logger.Error().Err(err).Msg(ErrRegistrarRejectedRequest.Error())
+			return ErrRegistrarRejectedRequest
 		}
 	}
+
+	logger.Info().Msg("update request successful")
 
 	return nil
 }
@@ -106,7 +112,8 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 func (p *PorkbunDnsUpdateService) queryRecordExists(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) (bool, error) {
 	endpoint := fmt.Sprintf("%s/dns/retrieveByNameType/%s/A/%s", p.baseUrl, request.Domain, request.Subdomain)
 
-	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("checking if record exists")
+	logger := log.With().Str("func", "createRecord").Str("registrar", "porkbun").Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Logger()
+	logger.Info().Msg("query for existing record")
 
 	var r PorkbunQueryResponse
 
@@ -119,25 +126,28 @@ func (p *PorkbunDnsUpdateService) queryRecordExists(request *DynDnsRequest, pork
 	err = json.Unmarshal(b, &r)
 
 	if resp.StatusCode != http.StatusOK || r.Status != "SUCCESS" || err != nil {
-		log.Error().Msg("could not query record:" + string(b))
-		return false, fmt.Errorf("could not query record: %s", string(b))
+		logger.Error().Bytes("response", b).Msg(ErrRegistrarRejectedRequest.Error())
+		return false, ErrRegistrarRejectedRequest
 	}
 
 	if r.Status == "SUCCESS" && len(r.Records) > 0 {
 		for _, e := range r.Records {
+			logger.Info().Msg("record found")
 			if e.Name == fmt.Sprintf("%s.%s", request.Subdomain, request.Domain) {
 				return true, nil
 			}
 		}
 	}
 
+	logger.Info().Msg("record not found")
 	return false, nil
 }
 
 func (p *PorkbunDnsUpdateService) createRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) error {
 	endpoint := fmt.Sprintf("%s/dns/create/%s", p.baseUrl, request.Domain)
 
-	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("creating new record")
+	logger := log.With().Str("func", "createRecord").Str("registrar", "porkbun").Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Logger()
+	logger.Info().Msg("creating record")
 
 	resp, err := p.executeRequest(endpoint, porkbunRequest)
 	if err != nil {
@@ -146,7 +156,8 @@ func (p *PorkbunDnsUpdateService) createRecord(request *DynDnsRequest, porkbunRe
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("could not create record: %s", string(b))
+		logger.Error().Bytes("response", b).Msg(ErrRegistrarRejectedRequest.Error())
+		return ErrRegistrarRejectedRequest
 	}
 
 	return nil
@@ -155,7 +166,8 @@ func (p *PorkbunDnsUpdateService) createRecord(request *DynDnsRequest, porkbunRe
 func (p *PorkbunDnsUpdateService) updateRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) error {
 	endpoint := fmt.Sprintf("%s/dns/editByNameType/%s/A/%s", p.baseUrl, request.Domain, request.Subdomain)
 
-	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("updating record")
+	logger := log.With().Str("func", "updateRecord").Str("registrar", "porkbun").Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Logger()
+	logger.Info().Msg("updating record")
 
 	resp, err := p.executeRequest(endpoint, porkbunRequest)
 	if err != nil {
@@ -164,31 +176,37 @@ func (p *PorkbunDnsUpdateService) updateRecord(request *DynDnsRequest, porkbunRe
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("could not update record: %s", string(b))
+		logger.Error().Bytes("response", b).Msg(ErrRegistrarRejectedRequest.Error())
+		return ErrRegistrarRejectedRequest
 	}
 
 	return nil
 }
 
 func (p *PorkbunDnsUpdateService) executeRequest(endpoint string, porkbunRequest *PorkbunApiRequest) (*http.Response, error) {
+	logger := log.With().Str("func", "executeRequest").Str("registrar", "porkbun").Str("endpoint", endpoint).Str("subdomain", porkbunRequest.Subdomain).Logger()
+	logger.Info().Msg("building update request")
+
 	body, err := json.Marshal(porkbunRequest)
 	if err != nil {
-		log.Error().Err(err).Msg("marshalling failed")
-		return nil, errors.New("could not parse request")
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return nil, ErrBuildingRequest
 	}
 
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		log.Error().Err(err).Msg("building request failed failed")
-		return nil, errors.New("could not create request for porkbun")
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return nil, ErrBuildingRequest
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("executing request failed")
-		return nil, errors.New("could not execute request")
+		logger.Error().Err(err).Msg(ErrExecutingRequest.Error())
+		return nil, ErrExecutingRequest
 	}
+
+	logger.Info().Msg("request successful")
 
 	return resp, nil
 }

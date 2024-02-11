@@ -35,16 +35,19 @@ func NewUpdateApi(dnsServiceFactory factory.ServiceFactory) *UpdateApi {
 func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 	var request UpdateRequest
 
+	logger := log.With().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Logger()
+
 	err := c.Bind(&request)
 	if err != nil {
 		log.Error().Err(err).Msg(ErrCannotParseRequest.Error())
 		return c.String(http.StatusBadRequest, ErrCannotParseRequest.Error())
 	}
 
-	log.Info().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Msg("request received")
+	logger.Info().Msg("request received")
 
 	err = validateRequest(request.Domain, request.IP)
 	if err != nil {
+		logger.Error().Err(err).Msg(err.Error())
 		return c.String(400, err.Error())
 	}
 
@@ -53,6 +56,7 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 	successfulUpdates := 0
 
 	if len(subdomains) == 0 || subdomains[0] == "" {
+		logger.Error().Err(ErrMissingParameter).Msg(ErrMissingParameter.Error())
 		return c.String(http.StatusBadRequest, ErrMissingParameter.Error())
 	}
 
@@ -60,6 +64,7 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 		service, err := u.dnsServiceFactory.Find(services.Registrar(request.Registrar))
 		if err != nil {
+			logger.Err(err).Msg("getting registrar from factory failed")
 			return c.String(400, err.Error())
 		}
 
@@ -71,13 +76,14 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 		err = service.UpdateRecord(request)
 		if err != nil {
+			logger.Err(err).Msg("updating record failed")
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
 		successfulUpdates++
 	}
 
-	log.Info().Int("updates", successfulUpdates).Str("subdomains", request.Subdomains).Str("domain", request.Domain).Msg("successfully created")
+	logger.Info().Int("updates", successfulUpdates).Msg("successfully created")
 
 	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", successfulUpdates, request.Subdomains, request.Domain, request.IP))
 

@@ -99,7 +99,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 
 	err = registrar.UpdateRecord(req)
 
-	assert.EqualError(t, err, "could not query record: {\"status\":\"ERROR\",\"records\":[]}")
+	assert.EqualError(t, err, services.ErrRegistrarRejectedRequest.Error())
 }
 
 func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Success(t *testing.T) {
@@ -183,7 +183,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Failure_On_Update(t *testin
 
 	err = registrar.UpdateRecord(dynReq)
 
-	assert.EqualError(t, err, "porkbun rejected updated record")
+	assert.EqualError(t, err, services.ErrRegistrarRejectedRequest.Error())
 }
 
 func TestPorkbunDnsUpdateService_UpdateRecord_NotExists_Failure_On_Create(t *testing.T) {
@@ -225,5 +225,5 @@ func TestPorkbunDnsUpdateService_UpdateRecord_NotExists_Failure_On_Create(t *tes
 
 	err = registrar.UpdateRecord(dynReq)
 
-	assert.EqualError(t, err, "porkbun rejected new record")
+	assert.EqualError(t, err, services.ErrRegistrarRejectedRequest.Error())
 }

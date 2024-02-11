@@ -97,7 +97,7 @@ func TestGandiDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 
 	err = registrar.UpdateRecord(req)
 
-	assert.EqualError(t, err, "gandi rejected request: {\"errors\":[{\"message\":\"error\"}],\"result\":null}")
+	assert.EqualError(t, err, services.ErrRegistrarRejectedRequest.Error())
 }
 
 func TestGandiDnsUpdateService_UpdateRecord_Success(t *testing.T) {
