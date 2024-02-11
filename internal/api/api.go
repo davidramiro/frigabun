@@ -12,15 +12,12 @@ import (
 )
 
 type UpdateApi struct {
+	dnsServiceFactory services.ServiceFactory
 }
 
 type StatusResponse struct {
-	ApiStatus bool `json:"api_status"`
-}
-
-type ApiError struct {
-	Code    int
-	Message string
+	ApiStatus      bool                 `json:"api_status"`
+	ActiveServices []services.Registrar `json:"active_services"`
 }
 
 type UpdateRequest struct {
@@ -30,20 +27,24 @@ type UpdateRequest struct {
 	Registrar  string `query:"registrar"`
 }
 
-func HandleUpdateRequest(c echo.Context) error {
+func NewUpdateApi(dnsServiceFactory services.ServiceFactory) *UpdateApi {
+	return &UpdateApi{dnsServiceFactory: dnsServiceFactory}
+}
+
+func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 	var request UpdateRequest
 
 	err := c.Bind(&request)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("binding request to struct failed")
-		return c.String(http.StatusBadRequest, "bad request")
+		logger.Log.Error().Err(err).Msg(ErrCannotParseRequest.Error())
+		return c.String(http.StatusBadRequest, ErrCannotParseRequest.Error())
 	}
 
 	logger.Log.Info().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Msg("request received")
 
-	apiErr := validateRequest(request.Domain, request.IP)
-	if apiErr != nil {
-		return c.String(apiErr.Code, apiErr.Message)
+	err = validateRequest(request.Domain, request.IP)
+	if err != nil {
+		return c.String(400, err.Error())
 	}
 
 	subdomains := strings.Split(request.Subdomains, ",")
@@ -51,19 +52,14 @@ func HandleUpdateRequest(c echo.Context) error {
 	successfulUpdates := 0
 
 	if len(subdomains) == 0 || subdomains[0] == "" {
-		return c.String(http.StatusBadRequest, "missing subdomains parameter")
-	}
-
-	factory, err := services.NewDnsUpdateServiceFactory()
-	if err != nil {
-		return err
+		return c.String(http.StatusBadRequest, ErrMissingParameter.Error())
 	}
 
 	for i := range subdomains {
 
-		service, err := factory.Find(services.Registrar(request.Registrar))
+		service, err := u.dnsServiceFactory.Find(services.Registrar(request.Registrar))
 		if err != nil {
-			return err
+			return c.String(400, err.Error())
 		}
 
 		request := &services.DynDnsRequest{
@@ -74,7 +70,7 @@ func HandleUpdateRequest(c echo.Context) error {
 
 		err = service.UpdateRecord(request)
 		if err != nil {
-			return c.String(http.StatusBadRequest, err.Error())
+			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
 		successfulUpdates++
@@ -86,18 +82,20 @@ func HandleUpdateRequest(c echo.Context) error {
 
 }
 
-func HandleStatusCheck(c echo.Context) error {
-	statusResponse := &StatusResponse{ApiStatus: true}
+func (u *UpdateApi) HandleStatusCheck(c echo.Context) error {
+	listServices := u.dnsServiceFactory.ListServices()
+	statusResponse := &StatusResponse{ApiStatus: true, ActiveServices: listServices}
+
 	return c.JSON(200, statusResponse)
 }
 
-func validateRequest(domain string, ip string) *ApiError {
+func validateRequest(domain string, ip string) error {
 	if !govalidator.IsIPv4(ip) {
-		return &ApiError{Code: 400, Message: "missing or invalid IP address, only IPv4 allowed"}
+		return ErrInvalidIP
 	}
 
 	if !govalidator.IsDNSName(domain) {
-		return &ApiError{Code: 400, Message: "missing or invalid domain name"}
+		return ErrInvalidDomain
 	}
 
 	return nil

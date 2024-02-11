@@ -1,6 +1,10 @@
-with-expecter: true
+with-expecter: True
 packages:
-  github.com/davidramiro/frigabun:
-    config:
+  github.com/davidramiro/frigabun/services:
     interfaces:
+      ServiceFactory:
       DnsUpdateService:
+  github.com/spf13/viper:
+    interfaces:
+      GetBool:
+      GetString:

@@ -1,6 +1,5 @@
 [api]
 port = 9595
-hideApiKeyInLogs = false
 enableStatusLog = false
 
 [gandi]

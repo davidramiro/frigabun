@@ -5,6 +5,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+type ServiceFactory interface {
+	Register(DnsUpdateService)
+	Find(Registrar) (DnsUpdateService, error)
+	ListServices() []Registrar
+}
+
 type DnsUpdateServiceFactory struct {
 	services map[Registrar]DnsUpdateService
 }
@@ -33,12 +39,12 @@ func NewDnsUpdateServiceFactory() (*DnsUpdateServiceFactory, error) {
 	}
 
 	if viper.GetBool("porkbun.enabled") {
-		gandiService, err := NewGandiDnsUpdateService()
+		porkbunService, err := NewPorkbunDnsUpdateService()
 		if err != nil {
 			return nil, err
 		}
 
-		factory.Register(gandiService)
+		factory.Register(porkbunService)
 	}
 
 	return factory, nil
@@ -63,4 +69,16 @@ func (df *DnsUpdateServiceFactory) Find(registrar Registrar) (service DnsUpdateS
 	}
 
 	return service, nil
+}
+
+func (df *DnsUpdateServiceFactory) ListServices() []Registrar {
+	keys := make([]Registrar, len(df.services))
+
+	i := 0
+	for k := range df.services {
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }
