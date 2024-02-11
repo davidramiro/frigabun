@@ -11,17 +11,9 @@ builds:
       - windows
       - darwin
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
-    files:
+  - files:
     - config.sample.toml
-    format_overrides:
-      - goos: windows
-        format: zip
+    - README.md
 checksum:
   name_template: 'checksums.txt'
 snapshot:
