@@ -2,16 +2,17 @@ package api
 
 import (
 	"fmt"
-	"github.com/davidramiro/frigabun/pkg/cloudflare"
+	"github.com/davidramiro/frigabun/services"
 	"net/http"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/davidramiro/frigabun/internal/logger"
-	"github.com/davidramiro/frigabun/pkg/gandi"
-	"github.com/davidramiro/frigabun/pkg/porkbun"
 	"github.com/labstack/echo/v4"
 )
+
+type UpdateApi struct {
+}
 
 type StatusResponse struct {
 	ApiStatus bool `json:"api_status"`
@@ -23,12 +24,10 @@ type ApiError struct {
 }
 
 type UpdateRequest struct {
-	Domain       string `query:"domain"`
-	Subdomains   string `query:"subdomain"`
-	IP           string `query:"ip"`
-	ApiKey       string `query:"apikey"`
-	ApiSecretKey string `query:"apisecretkey"`
-	Registrar    string `query:"registrar"`
+	Domain     string `query:"domain"`
+	Subdomains string `query:"subdomain"`
+	IP         string `query:"ip"`
+	Registrar  string `query:"registrar"`
 }
 
 func HandleUpdateRequest(c echo.Context) error {
@@ -55,44 +54,27 @@ func HandleUpdateRequest(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "missing subdomains parameter")
 	}
 
+	factory, err := services.NewDnsUpdateServiceFactory()
+	if err != nil {
+		return err
+	}
+
 	for i := range subdomains {
-		if request.Registrar == "gandi" {
-			dns := &gandi.GandiDns{
-				IP:        request.IP,
-				Domain:    request.Domain,
-				Subdomain: subdomains[i],
-				ApiKey:    request.ApiKey,
-			}
-			err := dns.SaveRecord()
-			if err != nil {
-				return c.String(err.Code, err.Message)
-			}
-		} else if request.Registrar == "porkbun" {
-			dns := &porkbun.PorkbunDns{
-				IP:           request.IP,
-				Domain:       request.Domain,
-				Subdomain:    subdomains[i],
-				ApiKey:       request.ApiKey,
-				SecretApiKey: request.ApiSecretKey,
-			}
-			err := dns.AddRecord()
-			if err != nil {
-				return c.String(err.Code, err.Message)
-			}
-		} else if request.Registrar == "cloudflare" {
-			dns := &cloudflare.CloudflareDns{
-				IP:        request.IP,
-				Domain:    request.Domain,
-				Subdomain: subdomains[i],
-				ApiKey:    request.ApiSecretKey,
-				ZoneId:    request.ApiKey,
-			}
-			err := dns.SaveRecord()
-			if err != nil {
-				return c.String(err.Code, err.Message)
-			}
-		} else {
-			return c.String(http.StatusBadRequest, "missing or invalid registrar")
+
+		service, err := factory.Find(services.Registrar(request.Registrar))
+		if err != nil {
+			return err
+		}
+
+		request := &services.DynDnsRequest{
+			IP:        request.IP,
+			Domain:    request.Domain,
+			Subdomain: subdomains[i],
+		}
+
+		err = service.UpdateRecord(request)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		successfulUpdates++
