@@ -1,0 +1,6 @@
+with-expecter: true
+packages:
+  github.com/davidramiro/frigabun:
+    config:
+    interfaces:
+      DnsUpdateService:

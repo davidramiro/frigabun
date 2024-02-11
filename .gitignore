@@ -19,6 +19,6 @@ dist/
 # Go workspace file
 go.work
 
-config.sample.toml
+config.toml
 
 .idea/
