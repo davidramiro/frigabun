@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	mock_services "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
+	mockservices "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
 	"github.com/davidramiro/frigabun/services"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ func TestGandiDnsUpdateService_Registrar(t *testing.T) {
 
 func TestGandiDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 	setupGandiConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 	h.On("Do", mock.AnythingOfType("*http.Request")).Return(nil, errors.New("gd api request error")).Once()
 
 	registrar, err := services.NewGandiDnsUpdateService(h)
@@ -65,7 +65,7 @@ func TestGandiDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 
 func TestGandiDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 	setupGandiConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -102,7 +102,7 @@ func TestGandiDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 
 func TestGandiDnsUpdateService_UpdateRecord_Success(t *testing.T) {
 	setupGandiConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	mock_services "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
+	mockservices "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
 	"github.com/davidramiro/frigabun/services"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func TestPorkbunDnsUpdateService_Registrar(t *testing.T) {
 
 func TestPorkbunDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 	setupPorkbunConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 	h.On("Do", mock.AnythingOfType("*http.Request")).Return(nil, errors.New("pb api request error")).Once()
 
 	registrar, err := services.NewPorkbunDnsUpdateService(h)
@@ -67,7 +67,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 
 func TestPorkbunDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 	setupPorkbunConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.PorkbunQueryResponse{
 		Status: "ERROR",
@@ -104,7 +104,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_ApiError(t *testing.T) {
 
 func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Success(t *testing.T) {
 	setupPorkbunConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	queryResp := &services.PorkbunQueryResponse{
 		Status: "SUCCESS",
@@ -146,7 +146,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Success(t *testing.T) {
 
 func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Failure_On_Update(t *testing.T) {
 	setupPorkbunConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	queryResp := &services.PorkbunQueryResponse{
 		Status: "SUCCESS",
@@ -188,7 +188,7 @@ func TestPorkbunDnsUpdateService_UpdateRecord_Exists_Failure_On_Update(t *testin
 
 func TestPorkbunDnsUpdateService_UpdateRecord_NotExists_Failure_On_Create(t *testing.T) {
 	setupPorkbunConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	queryResp := &services.PorkbunQueryResponse{
 		Status: "SUCCESS",

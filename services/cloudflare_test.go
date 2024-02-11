@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	mock_services "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
+	mockservices "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
 	"github.com/davidramiro/frigabun/services"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func TestCloudflareDnsUpdateService_Registrar(t *testing.T) {
 
 func TestCloudflareDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 	h.On("Do", mock.AnythingOfType("*http.Request")).Return(nil, errors.New("cf api request error")).Once()
 
 	registrar, err := services.NewCloudflareDnsUpdateService(h)
@@ -67,7 +67,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_RequestError(t *testing.T) {
 
 func TestCloudflareDnsUpdateService_UpdateRecord_QueryError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -104,7 +104,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_QueryError(t *testing.T) {
 
 func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -149,7 +149,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord(t *testing.T) {
 
 func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -194,7 +194,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord(t *testing.T) {
 
 func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord_ApiError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -239,7 +239,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord_ApiError(t *testing.T
 
 func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord_ApiError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -284,7 +284,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord_ApiError(t *test
 
 func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord_RequestError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {
@@ -326,7 +326,7 @@ func TestCloudflareDnsUpdateService_UpdateRecord_ExistingRecord_RequestError(t *
 
 func TestCloudflareDnsUpdateService_UpdateRecord_NewRecord_RequestError(t *testing.T) {
 	setupCloudflareConfig()
-	h := mock_services.NewMockHTTPClient(t)
+	h := mockservices.NewMockHTTPClient(t)
 
 	resp := &services.CloudflareQueryResponse{
 		Errors: []struct {

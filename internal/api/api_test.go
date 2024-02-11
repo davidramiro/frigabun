@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	mock_services "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
-	mock_factory "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services/factory"
+	mockservices "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services"
+	mockfactory "github.com/davidramiro/frigabun/mocks/github.com/davidramiro/frigabun/services/factory"
 	"github.com/davidramiro/frigabun/services"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +28,7 @@ func TestStatusEndpointOk(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	sf.On("ListServices").Return([]services.Registrar{"cloudflare", "gandi"}).Once()
 
 	updateApi = NewUpdateApi(sf)
@@ -58,7 +58,7 @@ func TestUpdateEndpointMissingSubdomain(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	updateApi = NewUpdateApi(sf)
 
 	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
@@ -80,7 +80,7 @@ func TestUpdateEndpointInvalidIP(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	updateApi = NewUpdateApi(sf)
 
 	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
@@ -102,7 +102,7 @@ func TestUpdateEndpointInvalidRegistrar(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	sf.On("Find", services.Registrar("porkbun")).Return(nil, errors.New("cannot find registrar porkbun"))
 
 	updateApi = NewUpdateApi(sf)
@@ -126,10 +126,10 @@ func TestUpdateEndpointFailureInService(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	cs := mock_services.NewMockDnsUpdateService(t)
+	cs := mockservices.NewMockDnsUpdateService(t)
 	cs.On("UpdateRecord", mock.Anything).Return(errors.New("failed to update")).Once()
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once()
 
 	updateApi = NewUpdateApi(sf)
@@ -153,10 +153,10 @@ func TestUpdateEndpointSuccessSingleSubdomain(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	cs := mock_services.NewMockDnsUpdateService(t)
+	cs := mockservices.NewMockDnsUpdateService(t)
 	cs.On("UpdateRecord", mock.Anything).Return(nil).Once()
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once()
 
 	updateApi = NewUpdateApi(sf)
@@ -180,10 +180,10 @@ func TestUpdateEndpointSuccessThreeSubdomains(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	cs := mock_services.NewMockDnsUpdateService(t)
+	cs := mockservices.NewMockDnsUpdateService(t)
 	cs.On("UpdateRecord", mock.Anything).Return(nil).Times(3)
 
-	sf := mock_factory.NewMockServiceFactory(t)
+	sf := mockfactory.NewMockServiceFactory(t)
 	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once().Times(3)
 
 	updateApi = NewUpdateApi(sf)

@@ -49,12 +49,12 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
-	factory, err := factory.NewDnsUpdateServiceFactory()
+	serviceFactory, err := factory.NewDnsUpdateServiceFactory()
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot init service factory")
+		log.Fatal().Err(err).Msg("cannot init service serviceFactory")
 	}
 
-	updateApi := api.NewUpdateApi(factory)
+	updateApi := api.NewUpdateApi(serviceFactory)
 	g := e.Group("/api")
 	g.GET("/update", updateApi.HandleUpdateRequest)
 	g.GET("/status", updateApi.HandleStatusCheck)
