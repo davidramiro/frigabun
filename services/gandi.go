@@ -14,14 +14,19 @@ import (
 type GandiDnsUpdateService struct {
 	registrarSettings
 	apiKey string
+	client HTTPClient
 }
 
-func NewGandiDnsUpdateService() (*GandiDnsUpdateService, error) {
+func NewGandiDnsUpdateService(client HTTPClient) (*GandiDnsUpdateService, error) {
 	baseUrl := viper.GetString("gandi.baseUrl")
 	ttl := viper.GetInt("gandi.ttl")
 	apikey := viper.GetString("gandi.apiKey")
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 {
-		return nil, fmt.Errorf(ErrMissingInfoForServiceInit, "cloudflare")
+		return nil, ErrMissingInfoForServiceInit
+	}
+
+	if client == nil {
+		client = &http.Client{}
 	}
 
 	return &GandiDnsUpdateService{
@@ -30,6 +35,7 @@ func NewGandiDnsUpdateService() (*GandiDnsUpdateService, error) {
 			ttl:     ttl,
 		},
 		apiKey: apikey,
+		client: client,
 	}, nil
 }
 
@@ -74,9 +80,7 @@ func (g *GandiDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Authorization", "Apikey "+g.apiKey)
 
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
+	resp, err := g.client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("executing request failed")
 		return errors.New("could execute request")

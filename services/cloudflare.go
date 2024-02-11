@@ -15,15 +15,20 @@ type CloudflareDnsUpdateService struct {
 	registrarSettings
 	apiKey string
 	zoneId string
+	client HTTPClient
 }
 
-func NewCloudflareDnsUpdateService() (*CloudflareDnsUpdateService, error) {
+func NewCloudflareDnsUpdateService(client HTTPClient) (*CloudflareDnsUpdateService, error) {
 	baseUrl := viper.GetString("cloudflare.baseUrl")
 	ttl := viper.GetInt("cloudflare.ttl")
 	apikey := viper.GetString("cloudflare.apiKey")
 	zoneId := viper.GetString("cloudflare.zoneId")
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 || len(zoneId) == 0 {
-		return nil, fmt.Errorf(ErrMissingInfoForServiceInit, "cloudflare")
+		return nil, ErrMissingInfoForServiceInit
+	}
+
+	if client == nil {
+		client = &http.Client{}
 	}
 
 	return &CloudflareDnsUpdateService{
@@ -33,6 +38,7 @@ func NewCloudflareDnsUpdateService() (*CloudflareDnsUpdateService, error) {
 		},
 		apiKey: apikey,
 		zoneId: zoneId,
+		client: client,
 	}, nil
 }
 
@@ -65,9 +71,7 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
 
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.New("error getting cloudflare request")
 	}
@@ -124,12 +128,10 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
 
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("executing request failed")
-		return errors.New("could execute request")
+		return errors.New("could not execute request")
 	}
 
 	if resp.StatusCode != 200 {
@@ -168,17 +170,15 @@ func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
 
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("executing request failed")
-		return errors.New("could execute request")
+		return errors.New("could not execute request")
 	}
 
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		log.Error().Msg("gandi rejected request")
+		log.Error().Msg("cloudflare rejected request")
 		return fmt.Errorf("cloudflare rejected request: %s", string(b))
 	}
 

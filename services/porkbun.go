@@ -15,15 +15,21 @@ type PorkbunDnsUpdateService struct {
 	registrarSettings
 	apiKey       string
 	apiSecretKey string
+	client       HTTPClient
 }
 
-func NewPorkbunDnsUpdateService() (*PorkbunDnsUpdateService, error) {
+func NewPorkbunDnsUpdateService(client HTTPClient) (*PorkbunDnsUpdateService, error) {
 	baseUrl := viper.GetString("porkbun.baseUrl")
-	ttl := viper.GetInt("gandi.ttl")
+	ttl := viper.GetInt("porkbun.ttl")
 	apikey := viper.GetString("porkbun.apiKey")
 	apiSecretkey := viper.GetString("porkbun.apiSecretKey")
+
 	if len(baseUrl) == 0 || ttl == 0 || len(apikey) == 0 {
-		return nil, fmt.Errorf(ErrMissingInfoForServiceInit, "cloudflare")
+		return nil, ErrMissingInfoForServiceInit
+	}
+
+	if client == nil {
+		client = &http.Client{}
 	}
 
 	return &PorkbunDnsUpdateService{
@@ -33,6 +39,7 @@ func NewPorkbunDnsUpdateService() (*PorkbunDnsUpdateService, error) {
 		},
 		apiKey:       apikey,
 		apiSecretKey: apiSecretkey,
+		client:       client,
 	}, nil
 }
 
@@ -68,7 +75,7 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 		SecretApiKey: p.apiSecretKey,
 	}
 
-	exists, err := p.queryRecord(request, porkbunRequest)
+	exists, err := p.queryRecordExists(request, porkbunRequest)
 
 	if err != nil {
 		return err
@@ -96,7 +103,7 @@ func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 	return nil
 }
 
-func (p *PorkbunDnsUpdateService) queryRecord(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) (bool, error) {
+func (p *PorkbunDnsUpdateService) queryRecordExists(request *DynDnsRequest, porkbunRequest *PorkbunApiRequest) (bool, error) {
 	endpoint := fmt.Sprintf("%s/dns/retrieveByNameType/%s/A/%s", p.baseUrl, request.Domain, request.Subdomain)
 
 	log.Info().Str("subdomain", request.Subdomain).Str("endpoint", endpoint).Str("IP", request.IP).Msg("checking if record exists")
@@ -177,9 +184,7 @@ func (p *PorkbunDnsUpdateService) executeRequest(endpoint string, porkbunRequest
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("executing request failed")
 		return nil, errors.New("could not execute request")
