@@ -1,7 +1,4 @@
 project_name: frigabun
-before:
-  hooks:
-    - go mod tidy
 builds:
   - main: ./
     env:
