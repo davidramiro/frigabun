@@ -9,19 +9,23 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
 	"strings"
 	"time"
 )
 
 func main() {
 
-	log.Info().Msg("starting frigabun")
-	log.Info().Msg("reading config")
+	_, err := os.Stat("/data/options.json")
+	if err != nil {
+		viper.AddConfigPath(".")
+		viper.SetConfigType("toml")
+	} else {
+		viper.AddConfigPath("/data")
+		viper.SetConfigName("options")
+	}
 
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not read config file")
 	}
