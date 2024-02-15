@@ -60,11 +60,6 @@ type PorkbunQueryResponse struct {
 	} `json:"records"`
 }
 
-type PorkbunUpdateError struct {
-	Code    int
-	Message string
-}
-
 func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 
 	porkbunRequest := &PorkbunApiRequest{

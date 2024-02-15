@@ -48,11 +48,6 @@ type GandiApiRequest struct {
 	IPValues  []string `json:"rrset_values"`
 }
 
-type GandiUpdateError struct {
-	Code    int
-	Message string
-}
-
 func (g *GandiDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 
 	gandiRequest := &GandiApiRequest{

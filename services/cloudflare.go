@@ -68,7 +68,7 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 		c.zoneId)
 
 	logger := log.With().Str("func", "UpdateRecord").Str("registrar", "cloudflare").Str("endpoint", endpoint).Str("domain", request.Domain).Str("subdomain", request.Subdomain).Logger()
-	logger.Info().Msg("building update request")
+	logger.Debug().Msg("building update request")
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 
@@ -99,6 +99,7 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	var id string
 
 	if len(r.Errors) == 0 && len(r.Result) > 0 {
+		logger.Debug().Int("entries", len(r.Result)).Msg("comparing entries with update request")
 		for _, e := range r.Result {
 			if e.Name == fmt.Sprintf("%s.%s", request.Subdomain, request.Domain) {
 				id = e.Id
@@ -127,7 +128,7 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 		c.zoneId)
 
 	logger := log.With().Str("func", "newRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
-	logger.Info().Msg("building new record request")
+	logger.Debug().Msg("building new record request")
 
 	body, err := json.Marshal(cloudflareRequest)
 	if err != nil {
@@ -157,7 +158,7 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 		return ErrRegistrarRejectedRequest
 	}
 
-	logger.Info().Msg("request for new record successful")
+	logger.Debug().Msg("request for new record successful")
 
 	return nil
 }

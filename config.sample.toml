@@ -1,9 +1,15 @@
 [api]
 port = 9595
+# log /api/status health check endpoint requests
 enableStatusLog = false
+# true for pretty, false for json logging
+prettyLog = true
+# log level, debug/info
+logLevel = "info"
+
 
 [gandi]
-enabled = true
+enabled = false
 baseUrl = "https://dns.api.gandi.net/api/v5"
 ttl = 1800
 apiKey = ""

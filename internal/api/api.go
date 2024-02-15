@@ -35,15 +35,14 @@ func NewUpdateApi(dnsServiceFactory factory.ServiceFactory) *UpdateApi {
 func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 	var request UpdateRequest
 
-	logger := log.With().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Logger()
-
 	err := c.Bind(&request)
 	if err != nil {
 		log.Error().Err(err).Msg(ErrCannotParseRequest.Error())
 		return c.String(http.StatusBadRequest, ErrCannotParseRequest.Error())
 	}
 
-	logger.Info().Msg("request received")
+	logger := log.With().Str("subdomains", request.Subdomains).Str("domain", request.Domain).Str("IP", request.IP).Logger()
+	logger.Info().Msg("dns update request received")
 
 	err = validateRequest(request.Domain, request.IP)
 	if err != nil {
@@ -53,14 +52,15 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 	subdomains := strings.Split(request.Subdomains, ",")
 
-	successfulUpdates := 0
+	count := len(subdomains)
 
-	if len(subdomains) == 0 || subdomains[0] == "" {
+	if count == 0 || subdomains[0] == "" {
 		logger.Error().Err(ErrMissingParameter).Msg(ErrMissingParameter.Error())
 		return c.String(http.StatusBadRequest, ErrMissingParameter.Error())
 	}
 
 	for i := range subdomains {
+		logger.Debug().Msgf("handling subdomain %d of %d", i+1, len(subdomains))
 
 		service, err := u.dnsServiceFactory.Find(services.Registrar(request.Registrar))
 		if err != nil {
@@ -80,13 +80,11 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
-		successfulUpdates++
 	}
 
-	logger.Info().Int("updates", successfulUpdates).Msg("successfully created")
+	logger.Info().Int("updates", count).Msg("successfully created")
 
-	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", successfulUpdates, request.Subdomains, request.Domain, request.IP))
-
+	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", count, request.Subdomains, request.Domain, request.IP))
 }
 
 func (u *UpdateApi) HandleStatusCheck(c echo.Context) error {

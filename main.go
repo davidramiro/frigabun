@@ -6,9 +6,11 @@ import (
 	"github.com/davidramiro/frigabun/services/factory"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -24,7 +26,18 @@ func main() {
 		log.Fatal().Err(err).Msg("could not read config file")
 	}
 
-	log.Info().Msg("setting up server")
+	if viper.GetBool("api.prettyLog") {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	}
+
+	switch viper.GetString("api.logLevel") {
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	log.Info().Msg("starting frigabun")
 
 	e := echo.New()
 	e.HideBanner = true
