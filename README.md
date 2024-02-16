@@ -41,7 +41,7 @@ Web service to allow FritzBox routers to update Gandi, Cloudflare and Porkbun DN
 - Log into your FritzBox
 - Navigate to `Internet` -> `Permit Access` -> `DynDNS`
 - Enable DynDNS and use `User-defined` as Provider
-- Enter the following URL: `http://{HOST}:{PORT}/api/update?domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=gandi`
+- Enter the following URL: `http://{HOST}:{PORT}/api/update?domain={DOMAIN}&subdomain={SUBDOMAIN}&ip=<ipaddr>&registrar=<username>`
   - Replace the `{HOST}` and `{PORT}` with your deployment of the application
     - By default, the application uses port `9595`
   - Replace `{DOMAIN}` with your base domain
@@ -50,7 +50,8 @@ Web service to allow FritzBox routers to update Gandi, Cloudflare and Porkbun DN
     - e.g. `subdomain` or `sudomain1,subdomain2`
 - Enter the full domain in the `Domain Name` field
   - e.g. `subdomain.domain.com` (if you use multiple subdomains, just choose any of those)
-- Enter any value in the `Username` and `Password` fields
+- Enter the registrar name in the `Username` field, either `gandi`, `cloudflare` or `porkbun`
+- Enter any value in the `Password` field
   - Unused, but required by the FritzBox interface
 
 Your settings should look something like this:
