@@ -1,6 +1,7 @@
 # frigabun
 
 Web service to allow FritzBox routers to update Gandi, Cloudflare and Porkbun DNS entries when obtaining a new IP address.
+Also available as a HomeAssistant addon.
 
 ## Requirements
 - A domain name on Gandi, Porkbun or Cloudflare
@@ -8,11 +9,19 @@ Web service to allow FritzBox routers to update Gandi, Cloudflare and Porkbun DN
 - FritzBox router with up-to-date firmware
 - Optional: To build or run manually: Go 1.20
 
-## Set up service
+
+## Standalone setup
 
 - Download the [latest](https://github.com/davidramiro/frigabun/releases/latest) release archive for your OS/arch
 - Unzip, rename `config.sample.toml` to `config.toml`
 - Add credentials to the registrars you want to use and set `enabled` to `true`
+
+## HomeAssistant addon setup
+
+- To install via HomeAssistant, go to your addon-settings, open the add-on store and go to the repository settings via the menu on the top right
+- Add http://www.github.com/davidramiro/ha-addons as a repository
+- frigabun should appear on the add-on store
+- Set registrar credentials in the add-on config
 
 ## Obtaining credentials
 
