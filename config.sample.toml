@@ -16,7 +16,7 @@ apiKey = ""
 
 [porkbun]
 enabled = false
-baseUrl = "https://porkbun.com/api/json/v3"
+baseUrl = "https://api.porkbun.com/api/json/v3"
 apiKey = ""
 secretApiKey = ""
 ttl = 1800
