@@ -52,15 +52,12 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 	subdomains := strings.Split(request.Subdomains, ",")
 
-	count := len(subdomains)
-
-	if count == 0 || subdomains[0] == "" {
-		logger.Error().Err(ErrMissingParameter).Msg(ErrMissingParameter.Error())
-		return c.String(http.StatusBadRequest, ErrMissingParameter.Error())
+	if subdomains == nil {
+		subdomains = []string{""}
 	}
 
 	for i := range subdomains {
-		logger.Debug().Msgf("handling subdomain %d of %d", i+1, len(subdomains))
+		logger.Debug().Msgf("handling request %d of %d", i+1, len(subdomains))
 
 		service, err := u.dnsServiceFactory.Find(services.Registrar(request.Registrar))
 		if err != nil {
@@ -82,9 +79,15 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 	}
 
-	logger.Info().Int("updates", count).Msg("successfully created")
+	logger.Info().Int("updates", len(subdomains)).Msg("successfully created")
 
-	return c.String(http.StatusOK, fmt.Sprintf("created %d entries for subdomains %s on %s: %s", count, request.Subdomains, request.Domain, request.IP))
+	return c.String(http.StatusOK,
+		fmt.Sprintf("created %d entries for subdomains %s on %s: %s",
+			len(subdomains),
+			request.Subdomains,
+			request.Domain,
+			request.IP),
+	)
 }
 
 func (u *UpdateApi) HandleStatusCheck(c echo.Context) error {

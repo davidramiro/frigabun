@@ -50,6 +50,10 @@ type GandiApiRequest struct {
 
 func (g *GandiDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
 
+	if request.Subdomain == "" {
+		request.Subdomain = "@"
+	}
+
 	gandiRequest := &GandiApiRequest{
 		Subdomain: request.Subdomain,
 		IPValues:  []string{request.IP},

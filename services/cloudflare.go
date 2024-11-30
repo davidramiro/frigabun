@@ -46,10 +46,10 @@ func NewCloudflareDnsUpdateService(client HTTPClient) (*CloudflareDnsUpdateServi
 }
 
 type CloudflareApiRequest struct {
-	Subdomain string `json:"name"`
-	Type      string `json:"type"`
-	TTL       int    `json:"ttl"`
-	IP        string `json:"content"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	TTL  int    `json:"ttl"`
+	IP   string `json:"content"`
 }
 
 type CloudflareQueryResponse struct {
@@ -67,10 +67,20 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records", c.baseUrl,
 		c.zoneId)
 
-	logger := log.With().Str("func", "UpdateRecord").Str("registrar", "cloudflare").Str("endpoint", endpoint).Str("domain", request.Domain).Str("subdomain", request.Subdomain).Logger()
+	logger := log.With().
+		Str("func", "UpdateRecord").
+		Str("registrar", "cloudflare").
+		Str("endpoint", endpoint).
+		Str("domain", request.Domain).
+		Str("subdomain", request.Subdomain).Logger()
+
 	logger.Debug().Msg("building update request")
 
 	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg(ErrBuildingRequest.Error())
+		return ErrBuildingRequest
+	}
 
 	var r CloudflareQueryResponse
 
@@ -83,9 +93,13 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 		return ErrBuildingRequest
 	}
 
-	b, _ := io.ReadAll(resp.Body)
-	err = json.Unmarshal(b, &r)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error().Err(err).Msg(ErrParsingResponse.Error())
+		return err
+	}
 
+	err = json.Unmarshal(b, &r)
 	if err != nil {
 		logger.Error().Err(err).Msg(ErrParsingResponse.Error())
 		return err
@@ -101,7 +115,14 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 	if len(r.Errors) == 0 && len(r.Result) > 0 {
 		logger.Debug().Int("entries", len(r.Result)).Msg("comparing entries with update request")
 		for _, e := range r.Result {
-			if e.Name == fmt.Sprintf("%s.%s", request.Subdomain, request.Domain) {
+			var match string
+			if request.Subdomain == "" {
+				match = request.Domain
+			} else {
+				match = fmt.Sprintf("%s.%s", request.Subdomain, request.Domain)
+			}
+
+			if e.Name == match {
 				id = e.Id
 			}
 		}
@@ -117,17 +138,32 @@ func (c *CloudflareDnsUpdateService) UpdateRecord(request *DynDnsRequest) error 
 }
 
 func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
+
+	var name string
+	if request.Subdomain != "" {
+		name = fmt.Sprintf("%s.%s", request.Subdomain, request.Domain)
+	} else {
+		name = request.Domain
+	}
+
 	cloudflareRequest := &CloudflareApiRequest{
-		Subdomain: fmt.Sprintf("%s.%s", request.Subdomain, request.Domain),
-		IP:        request.IP,
-		TTL:       c.ttl,
-		Type:      "A",
+		Name: name,
+		IP:   request.IP,
+		TTL:  c.ttl,
+		Type: "A",
 	}
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records", c.baseUrl,
 		c.zoneId)
 
-	logger := log.With().Str("func", "newRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
+	logger := log.With().
+		Str("func", "newRecord").
+		Str("registrar", "cloudflare").
+		Str("fqdn", cloudflareRequest.Name).
+		Str("endpoint", endpoint).
+		Str("IP", cloudflareRequest.IP).
+		Logger()
+
 	logger.Debug().Msg("building new record request")
 
 	body, err := json.Marshal(cloudflareRequest)
@@ -164,17 +200,24 @@ func (c *CloudflareDnsUpdateService) newRecord(request *DynDnsRequest) error {
 }
 
 func (c *CloudflareDnsUpdateService) editExistingRecord(request *DynDnsRequest, id string) error {
+	var name string
+	if request.Subdomain != "" {
+		name = fmt.Sprintf("%s.%s", request.Subdomain, request.Domain)
+	} else {
+		name = request.Domain
+	}
+
 	cloudflareRequest := &CloudflareApiRequest{
-		Subdomain: fmt.Sprintf("%s.%s", request.Subdomain, request.Domain),
-		IP:        request.IP,
-		TTL:       c.ttl,
-		Type:      "A",
+		Name: name,
+		IP:   request.IP,
+		TTL:  c.ttl,
+		Type: "A",
 	}
 
 	endpoint := fmt.Sprintf("%s/zones/%s/dns_records/%s", c.baseUrl,
 		c.zoneId, id)
 
-	logger := log.With().Str("func", "editExistingRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Subdomain).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
+	logger := log.With().Str("func", "editExistingRecord").Str("registrar", "cloudflare").Str("subdomain", cloudflareRequest.Name).Str("endpoint", endpoint).Str("IP", cloudflareRequest.IP).Logger()
 	logger.Info().Msg("building request to edit record")
 
 	body, err := json.Marshal(cloudflareRequest)

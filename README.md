@@ -57,8 +57,10 @@ Also available as a HomeAssistant addon.
     - e.g. `yourdomain.com`
   - Replace `{SUBDOMAIN}` with your subdomain or comma separated subdomains
     - e.g. `subdomain` or `sudomain1,subdomain2`
+    - If you just want to use the base domain without subdomain, remove the `&subdomain={SUBDOMAIN}` parameter.
 - Enter the full domain in the `Domain Name` field
   - e.g. `subdomain.domain.com` (if you use multiple subdomains, just choose any of those)
+  - or `domain.com` if no subdomain parameter given
 - Enter the registrar name in the `Username` field, either `gandi`, `cloudflare` or `porkbun`
 - Enter any value in the `Password` field
   - Unused, but required by the FritzBox interface

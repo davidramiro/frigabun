@@ -45,7 +45,7 @@ func NewPorkbunDnsUpdateService(client HTTPClient) (*PorkbunDnsUpdateService, er
 }
 
 type PorkbunApiRequest struct {
-	Subdomain    string `json:"name"`
+	Name         string `json:"name"`
 	Type         string `json:"type"`
 	TTL          int    `json:"ttl"`
 	IP           string `json:"content"`
@@ -61,9 +61,8 @@ type PorkbunQueryResponse struct {
 }
 
 func (p *PorkbunDnsUpdateService) UpdateRecord(request *DynDnsRequest) error {
-
 	porkbunRequest := &PorkbunApiRequest{
-		Subdomain:    request.Subdomain,
+		Name:         request.Subdomain,
 		IP:           request.IP,
 		TTL:          p.ttl,
 		Type:         "A",
@@ -128,7 +127,15 @@ func (p *PorkbunDnsUpdateService) queryRecordExists(request *DynDnsRequest, pork
 	if r.Status == "SUCCESS" && len(r.Records) > 0 {
 		for _, e := range r.Records {
 			logger.Info().Msg("record found")
-			if e.Name == fmt.Sprintf("%s.%s", request.Subdomain, request.Domain) {
+
+			var match string
+			if request.Subdomain == "" {
+				match = request.Domain
+			} else {
+				match = fmt.Sprintf("%s.%s", request.Subdomain, request.Domain)
+			}
+
+			if e.Name == match {
 				return true, nil
 			}
 		}
@@ -179,7 +186,7 @@ func (p *PorkbunDnsUpdateService) updateRecord(request *DynDnsRequest, porkbunRe
 }
 
 func (p *PorkbunDnsUpdateService) executeRequest(endpoint string, porkbunRequest *PorkbunApiRequest) (*http.Response, error) {
-	logger := log.With().Str("func", "executeRequest").Str("registrar", "porkbun").Str("endpoint", endpoint).Str("subdomain", porkbunRequest.Subdomain).Logger()
+	logger := log.With().Str("func", "executeRequest").Str("registrar", "porkbun").Str("endpoint", endpoint).Str("subdomain", porkbunRequest.Name).Logger()
 	logger.Info().Msg("building update request")
 
 	body, err := json.Marshal(porkbunRequest)
