@@ -52,10 +52,6 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 
 	subdomains := strings.Split(request.Subdomains, ",")
 
-	if subdomains == nil {
-		subdomains = []string{""}
-	}
-
 	for i := range subdomains {
 		logger.Debug().Msgf("handling request %d of %d", i+1, len(subdomains))
 
@@ -82,9 +78,8 @@ func (u *UpdateApi) HandleUpdateRequest(c echo.Context) error {
 	logger.Info().Int("updates", len(subdomains)).Msg("successfully created")
 
 	return c.String(http.StatusOK,
-		fmt.Sprintf("created %d entries for subdomains %s on %s: %s",
+		fmt.Sprintf("created %d entries on %s: %s",
 			len(subdomains),
-			request.Subdomains,
 			request.Domain,
 			request.IP),
 	)

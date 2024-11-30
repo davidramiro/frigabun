@@ -141,7 +141,33 @@ func TestUpdateEndpointSuccessSingleSubdomain(t *testing.T) {
 
 	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "created 1 entries for subdomains bar on foo.com: 10.0.0.1", rec.Body.String())
+		assert.Equal(t, "created 1 entries on foo.com: 10.0.0.1", rec.Body.String())
+	}
+}
+
+func TestUpdateEndpointSuccessNoSubdomain(t *testing.T) {
+	e := echo.New()
+
+	q := make(url.Values)
+	q.Set("domain", "foo.com")
+	q.Set("ip", "10.0.0.1")
+	q.Set("registrar", "cloudflare")
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	cs := mockservices.NewMockDnsUpdateService(t)
+	cs.On("UpdateRecord", mock.Anything).Return(nil).Once()
+
+	sf := mockfactory.NewMockServiceFactory(t)
+	sf.On("Find", services.Registrar("cloudflare")).Return(cs, nil).Once()
+
+	updateApi = NewUpdateApi(sf)
+
+	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "created 1 entries on foo.com: 10.0.0.1", rec.Body.String())
 	}
 }
 
@@ -168,7 +194,7 @@ func TestUpdateEndpointSuccessThreeSubdomains(t *testing.T) {
 
 	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "created 3 entries for subdomains foo,bar,baz on foo.com: 10.0.0.1", rec.Body.String())
+		assert.Equal(t, "created 3 entries on foo.com: 10.0.0.1", rec.Body.String())
 	}
 }
 
