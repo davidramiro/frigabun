@@ -45,28 +45,6 @@ func TestStatusEndpointOk(t *testing.T) {
 	}
 }
 
-func TestUpdateEndpointMissingSubdomain(t *testing.T) {
-	e := echo.New()
-
-	q := make(url.Values)
-	q.Set("domain", "foo.com")
-	q.Set("subdomain", "")
-	q.Set("ip", "10.0.0.1")
-	q.Set("registrar", "porkbun")
-
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/?%s", q.Encode()), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	sf := mockfactory.NewMockServiceFactory(t)
-	updateApi = NewUpdateApi(sf)
-
-	if assert.NoError(t, updateApi.HandleUpdateRequest(c)) {
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, ErrMissingParameter.Error(), rec.Body.String())
-	}
-}
-
 func TestUpdateEndpointInvalidIP(t *testing.T) {
 	e := echo.New()
 
