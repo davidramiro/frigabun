@@ -18,7 +18,7 @@ jobs:
         with:
           go-version: '>=1.22.0'
       - name: Install mockery
-        run: go install github.com/vektra/mockery/v2@v2.40.3
+        run: go install github.com/vektra/mockery/v2@v2.53.3
       - name: Generate mocks
         run: mockery
       - name: Build
